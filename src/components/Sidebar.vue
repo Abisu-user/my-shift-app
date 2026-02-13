@@ -15,7 +15,7 @@ const menuItems = [
 </script>
 
 <template>
-  <div class="h-screen w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 shrink-0 transition-all duration-300">
+  <div class="hidden md:flex h-screen w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 shrink-0 transition-all duration-300 overflow-y-auto">
     
     <div class="p-6 flex items-center gap-3 border-b border-slate-800/50">
       <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-xl font-black shadow-lg shadow-indigo-500/30">S</div>

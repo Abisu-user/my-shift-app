@@ -12,8 +12,9 @@ const currentView = ref('dashboard')
 const showLogin = ref(false)
 const isLoggingIn = ref(false)
 const currentUser = ref(null)
+const isMobileMenuOpen = ref(false) // 控制手機版選單開關
 
-const isSidebarOpen = ref(false)
+const isSidebarOpen = ref(window.innerWidth >= 1024)
 const currentTime = ref(new Date())
 let timer = null
 
@@ -26,6 +27,11 @@ onMounted(() => {
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
+
+const navigateTo = (view) => {
+  currentView.value = view
+  isMobileMenuOpen.value = false
+}
 
 // 處理登入
 const handleLoginRequest = async ({ username, password }) => {
@@ -57,10 +63,51 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex h-screen w-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
+  <div class="flex flex-col md:flex-row landscape:flex-row h-screen w-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
+
+    <header class="md:hidden landscape:hidden bg-slate-900 text-white px-4 py-3 flex justify-between items-center z-[60] shadow-md">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-sm font-black">S</div>
+        <span class="font-bold tracking-wide">排班 App</span>
+      </div>
+      <button @click="isMobileMenuOpen = !isMobileMenuOpen" class="p-2 text-slate-300">
+        <svg v-if="!isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </header>
+
+    <transition name="slide-down">
+      <div v-if="isMobileMenuOpen" class="md:hidden landscape:hidden fixed top-[56px] left-0 w-full bg-slate-900 z-50 border-t border-slate-800 shadow-2xl">
+        <div class="p-4 space-y-2">
+          <button 
+            v-for="item in [
+              { id: 'dashboard', label: '儀表板', icon: '📊', auth: false },
+              { id: 'employees', label: '員工管理', icon: '👥', auth: true },
+              { id: 'shift-editor', label: '排班編輯', icon: '🗓️', auth: true },
+              { id: 'settings', label: '系統設定', icon: '⚙️', auth: false }
+            ]" 
+            v-show="!item.auth || currentUser"
+            @click="navigateTo(item.id)"
+            class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-slate-300 transition-colors"
+            :class="currentView === item.id ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800'"
+          >
+            <span>{{ item.icon }}</span>
+            <span class="font-bold">{{ item.label }}</span>
+          </button>
+          <div class="pt-4 border-t border-slate-800">
+            <button v-if="currentUser" @click="handleLogout(); isMobileMenuOpen = false" class="w-full py-3 text-rose-400 font-bold text-center">🚪 登出系統</button>
+            <button v-else @click="showLogin = true; isMobileMenuOpen = false" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold">🔐 管理員登入</button>
+          </div>
+        </div>
+      </div>
+    </transition>
     
     <div 
-      class="h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden relative z-50 bg-slate-900"
+      class="h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden relative z-50 bg-slate-900 hidden md:block landscape:block"
       :class="isSidebarOpen ? 'w-64 shadow-2xl' : 'w-16 cursor-pointer hover:bg-slate-800'"
       @mouseenter="isSidebarOpen = true"
       @mouseleave="isSidebarOpen = false"
@@ -82,9 +129,9 @@ onMounted(async () => {
       </div>
     </div>
 
-    <main class="flex-1 h-full overflow-hidden flex flex-col relative bg-slate-100 transition-all duration-300">
+    <main class="flex-1 h-full overflow-hidden flex flex-col relative bg-slate-100">
       
-    <header class="bg-white border-b border-slate-100 px-8 py-3 flex justify-between items-center shrink-0 shadow-sm z-10">
+    <header class="bg-white border-b border-slate-100 px-4 md:px-8 py-3 flex justify-between items-center shrink-0 shadow-sm z-10">
   
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 text-sm">
@@ -139,3 +186,18 @@ onMounted(async () => {
 
   </div>
 </template>
+
+<style scoped>
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.3s ease-out;
+  max-height: 400px; /* 預設一個夠大的高度 */
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

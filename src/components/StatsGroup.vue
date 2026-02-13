@@ -51,7 +51,7 @@ const openDatePicker = () => {
       </div>
     </div>
     
-    <div class="w-fit relative bg-white p-6 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all duration-300 group overflow-hidden">
+    <div class="w-full md:w-fit relative bg-white p-6 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all duration-300 group overflow-hidden">
       <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500"></div>
       
       <div class="flex justify-between items-center relative z-10 cursor-pointer" @click="openDatePicker">
@@ -62,7 +62,7 @@ const openDatePicker = () => {
           <div class="flex items-center gap-2 mt-1 whitespace-nowrap">
             <button @click.stop="emit('change-week', -1)" class="p-1 hover:-translate-y-1 hover:shadow-xl hover:text-blue-500 rounded text-black-600 font-bold text-xl leading-none">< 上週</button>
             
-            <h3 class="text-lg font-black text-slate-800 tracking-tight">
+            <h3 class="text-base md:text-lg font-black text-slate-800 tracking-tight">
               {{ formatDateRange }}
             </h3>
 
