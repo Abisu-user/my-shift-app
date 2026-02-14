@@ -131,7 +131,7 @@ onMounted(async () => {
 
     <main class="flex-1 h-full overflow-hidden flex flex-col relative bg-gray-200">
       
-      <header class="bg-white border-b border-slate-100 px-4 md:px-8 py-3 flex justify-between items-center shrink-0 shadow-sm z-10">
+    <header class="bg-white border-b border-slate-100 px-4 md:px-8 py-3 flex justify-between items-center shrink-0 shadow-sm z-10">
   
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 text-sm">
@@ -163,7 +163,7 @@ onMounted(async () => {
         </div>
       </header>
 
-      <div class="flex-1 overflow-y-auto md:overflow-hidden p-2">
+      <div class="flex-1 overflow-y-auto md:overflow-hidden p-2 scroll-smooth">
         <DashboardView v-if="currentView === 'dashboard'" />
         <EmployeesView v-if="currentView === 'employees' && currentUser" />
         <ShiftEditorView v-if="currentView === 'shift-editor' && currentUser" />
@@ -171,6 +171,7 @@ onMounted(async () => {
           <p class="text-6xl mb-4">🚧</p>
           設定頁面建構中...
         </div>
+        <div class="h-10 md:hidden"></div>
       </div>
     </main>
 

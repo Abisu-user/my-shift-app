@@ -165,9 +165,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-[calc(100dvh-280px)] overflow-hidden animate-fade-in">
+  <div class="flex flex-col h-auto md:h-[calc(100dvh-280px)] overflow-hidden animate-fade-in">
     <!-- 篩選器區域 -->
-    <div class="shrink-0 mb-2 md:mb-6 landscape:mb-1 flex flex-wrap items-center gap-2 md:gap-4 bg-white/60 p-2 md:p-3 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-sm backdrop-blur-md">
+    <div class="mb-2 md:mb-6 landscape:mb-1 flex flex-wrap items-center gap-2 md:gap-4 bg-white/60 p-2 md:p-3 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-sm backdrop-blur-md">
     
         <div class="flex items-center gap-3 bg-white px-5 py-2 rounded-full border border-slate-500 shadow-sm flex-1 min-w-0 w-full md:w-auto md:flex-1">
             <span class="text-lg group-hover:scale-110 transition-transform">👥</span>
@@ -234,7 +234,7 @@ onUnmounted(() => {
         </button>
     </div>
     <!-- 班表區域 -->
-    <div class="hidden md:block landscape:block flex-1 overflow-y-auto min-h-0 bg-white shadow-xl border border-slate-200 relative">
+    <div class="hidden md:block landscape:block flex-1 md:overflow-y-auto min-h-0 bg-white shadow-xl border border-slate-200 relative">
         <div v-if="loading" class="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
             <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -308,7 +308,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 手機版員工卡片 -->
-    <div class="block md:hidden landscape:hidden flex-1 overflow-y-auto min-h-0 pb-24">
+    <div class="block md:hidden landscape:hidden flex-1 min-h-0 pb-24">
         <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
             <svg class="animate-spin h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
