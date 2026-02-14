@@ -148,14 +148,14 @@ onMounted(async () => {
 
         <div class="flex items-center gap-4 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100">
           <div class="flex items-center gap-1.5 border-r border-slate-200 pr-4">
-            <span class="text-[10px] opacity-40">CALENDAR</span>
+            <span class="text-[10px] opacity-100">日期</span>
             <span class="text-xs font-bold text-slate-500 tracking-tight">
               {{ currentTime.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }) }}
             </span>
           </div>
           
           <div class="flex items-center gap-1.5">
-            <span class="text-[10px] opacity-40">REAL-TIME</span>
+            <span class="text-[10px] opacity-100">時間</span>
             <span class="text-sm font-black text-indigo-500 tabular-nums tracking-wider">
               {{ currentTime.toLocaleTimeString('zh-TW', { hour12: false }) }}
             </span>

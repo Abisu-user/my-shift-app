@@ -75,11 +75,6 @@ onMounted(() => {
 
 <template>
   <div class="p-4 md:p-8 max-w-7xl mx-auto animate-fade-in">
-    <header class="mb-8">
-      <h2 class="text-3xl font-black text-slate-800 tracking-tight">儀表板概覽</h2>
-      <p class="text-slate-900 font-bold text-sm mt-1">即時排班與統計數據</p>
-    </header>
-
    <StatsGroup 
       :monday="currentMonday" 
       :stats="statsData"

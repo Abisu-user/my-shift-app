@@ -87,7 +87,7 @@ const processShiftData = computed(() => {
 const filteredProcessedData = computed(() => {
     return processShiftData.value.filter(emp => {
         // 姓名搜尋
-        const matchName = emp.name.toLowerCase().includes(filters.value.name.toLowerCase())
+        const matchName = filters.value.name ? emp.name === filters.value.name : true
         
         // 星期搜尋
         let matchDay = true
@@ -145,12 +145,24 @@ onMounted(loadData)
     
     <div class="mb-2 md:mb-6 landscape:mb-1 flex flex-wrap items-center gap-2 md:gap-4 bg-white/60 p-2 md:p-3 rounded-2xl md:rounded-[2rem] border border-slate-200 shadow-sm backdrop-blur-md">
     
-        <div class="flex items-center gap-3 bg-white px-5 py-3 rounded-full border border-slate-100 shadow-sm flex-1 min-w-0 w-full md:w-auto md:flex-1">
-            <span class="text-lg">🔍</span>
-            <input v-model="filters.name" type="text" placeholder="搜尋員工姓名..." class="bg-transparent border-none outline-none text-base font-bold text-slate-700 w-full">
+        <div class="flex items-center gap-3 bg-white px-5 py-2 rounded-full border border-slate-500 shadow-sm flex-1 min-w-0 w-full md:w-auto md:flex-1">
+            <span class="text-lg group-hover:scale-110 transition-transform">👥</span>
+            <div class="relative w-full">
+                <select v-model="filters.name" class="bg-transparent border-none outline-none text-base font-bold text-slate-700 w-full cursor-pointer appearance-none relative z-10">
+                    <option value="">顯示員工</option>
+                    <option v-for="emp in employees" :key="emp.id" :value="emp.name">
+                        {{ emp.name }}
+                    </option>
+                </select>
+                <div class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </div>
         </div>
 
-        <div class="flex items-center gap-2 bg-white px-5 py-3 rounded-full border border-slate-100 shadow-sm min-w-[160px]">
+        <div class="flex items-center gap-2 bg-white px-5 py-3 rounded-full border border-slate-500 shadow-sm min-w-[160px]">
             <span class="text-sm">📅</span>
             <select v-model="filters.day" class="bg-transparent border-none outline-none text-sm font-black text-slate-600 cursor-pointer w-full">
             <option :value="null">所有星期</option>
@@ -158,7 +170,7 @@ onMounted(loadData)
             </select>
         </div>
 
-        <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-100 shadow-sm group hover:border-orange-200 transition-all">
+        <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-500 shadow-sm group hover:border-orange-200 transition-all">
             <span class="text-xs">⏳</span>
             <select v-model="filters.category" class="bg-transparent border-none outline-none text-xs font-black text-slate-600 cursor-pointer pr-4 appearance-none">
             <option :value="null">所有班別</option>
@@ -170,7 +182,7 @@ onMounted(loadData)
 
         <button 
             @click="resetFilters" 
-            class="flex items-center gap-2 px-6 py-3 rounded-full text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-all active:scale-95"
+            class="flex items-center gap-2 px-6 py-3 rounded-full text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-all active:scale-95"
         >
             <span class="text-xs font-black uppercase tracking-widest">Reset</span>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,22 +191,22 @@ onMounted(loadData)
         </button>
     </div>
 
-    <div class="hidden md:block landscape:block flex-1 overflow-auto bg-white rounded-[2.5rem] shadow-xl border border-slate-100">
+    <div class="hidden md:block landscape:block flex-1 overflow-auto bg-white rounded-lg shadow-xl border border-slate-100">
         <table class="w-full text-left border-collapse">
             <thead class="bg-slate-50/80 sticky top-0 z-20 backdrop-blur-md">
             <tr class="landscape:text-[10px]">
-                <th class="py-2 px-3 md:py-6 md:px-6 min-w-[100px] md:min-w-[180px] landscape:min-w-[100px] border-b border-r border-slate-100 min-w-[100px] md:min-w-[180px] text-xs font-black text-slate-400 uppercase tracking-widest sticky left-0 bg-white z-30 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+                <th class="py-2 px-3 md:py-6 md:px-6 min-w-[100px] md:min-w-[180px] landscape:min-w-[100px] border-b-2 border-r border-slate-300 min-w-[100px] md:min-w-[180px] text-xs font-black text-slate-400 uppercase tracking-widest sticky left-0 bg-white z-30 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)]">
                 員工姓名
                 </th>
                 
-                <th v-for="label in weekDateLabels" :key="label.date" class="py-2 px-2 md:py-5 md:px-4 min-w-[80px] md:min-w-[130px] landscape:min-w-[85px] border-b border-r border-slate-100 text-center min-w-[90px] md:min-w-[130px]">
+                <th v-for="label in weekDateLabels" :key="label.date" class="py-2 px-2 md:py-5 md:px-4 min-w-[80px] md:min-w-[130px] landscape:min-w-[85px] border-b-2 border-r border-slate-300 text-center min-w-[90px] md:min-w-[130px]">
                 <div class="flex flex-col gap-1">
                     <span class="text-xs font-black text-slate-400 uppercase">{{ label.name }}</span>
                     <span class="text-base font-black text-slate-800">{{ label.date }}</span>
                 </div>
                 </th>
 
-                <th class="py-6 px-6 border-b border-slate-100 text-right text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 w-[100px]">
+                <th class="py-6 px-6 border-b-2 border-slate-300 text-right text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 w-[100px]">
                 總計(h)
                 </th>
             </tr>
@@ -203,40 +215,40 @@ onMounted(loadData)
             <tbody v-if="!loading">
             <tr v-for="emp in filteredProcessedData" :key="emp.id" class="group hover:bg-indigo-50/20 transition-colors">
                 
-                <td class="py-2 px-3 md:py-5 md:px-6 border-b border-r border-slate-100 sticky left-0 bg-white z-10 group-hover:bg-slate-50 transition-colors shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)]">
+                <td class="py-2 px-3 lg:py-5 lg:px-6 border-b-2 border-r border-slate-300 sticky left-0 bg-white z-10 group-hover:bg-slate-50 transition-colors shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)]">
                 <div class="flex items-center gap-4">
                     <span class="font-black text-slate-700 text-base">{{ emp.name }}</span>
                 </div>
                 </td>
 
-                <td v-for="(dayShifts, dayIdx) in emp.days" :key="dayIdx" class="p-3 border-b border-r border-slate-50 align-top">
-                <div class="flex flex-col gap-1 md:gap-2 md:min-h-[80px] justify-between">
-                    <div class="flex flex-col gap-1.5">
-                    <template v-if="dayShifts?.length > 0">
-                        <div v-for="(seg, sIdx) in dayShifts" :key="sIdx" 
-                            :class="[
-                            'text-[9px] landscape:text-[9px] md:text-[15px] font-black py-1 px-1.5 rounded-xl border text-center shadow-sm transition-transform hover:scale-105',
-                            getShiftCategory(seg.start, seg.end) === 'full' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                            getShiftCategory(seg.start, seg.end) === 'morning' ? 'bg-sky-50 text-sky-700 border-sky-200' : 
-                            'bg-indigo-50 text-indigo-700 border-indigo-200'
-                            ]">
-                        {{ seg.start }} — {{ seg.end }}
+                <td v-for="(dayShifts, dayIdx) in emp.days" :key="dayIdx" class="p-3 border-b-2 border-r border-slate-300 align-top">
+                    <div class="flex flex-col gap-1 md:gap-2 lg:min-h-[80px] justify-between">
+                        <div class="flex flex-col gap-1.5">
+                        <template v-if="dayShifts?.length > 0">
+                            <div v-for="(seg, sIdx) in dayShifts" :key="sIdx" 
+                                :class="[
+                                'text-[9px] max-lg:landscape:text-[10px] lg:text-[15px] font-black py-1 px-1.5 rounded-xl border text-center shadow-sm transition-transform hover:scale-105',
+                                getShiftCategory(seg.start, seg.end) === 'full' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                                getShiftCategory(seg.start, seg.end) === 'morning' ? 'bg-sky-50 text-sky-700 border-sky-200' : 
+                                'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                ]">
+                            {{ seg.start }} — {{ seg.end }}
+                            </div>
+                        </template>
+                        <div v-else class="text-center py-6">
+                            <span class="text-slate-500 text-[8px] md:text-xs italic font-bold">休假</span>
                         </div>
-                    </template>
-                    <div v-else class="text-center py-6">
-                        <span class="text-slate-500 text-[8px] md:text-xs italic font-bold">休假</span>
-                    </div>
-                    </div>
+                        </div>
 
-                    <div v-if="dayShifts?.length > 0" class="mt-2 text-right">
-                    <span class="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
-                        {{ calculateDayTotal(dayShifts) }} hr
-                    </span>
+                        <div v-if="dayShifts?.length > 0" class="mt-2 text-right">
+                        <span class="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
+                            {{ calculateDayTotal(dayShifts) }} hr
+                        </span>
+                        </div>
                     </div>
-                </div>
                 </td>
 
-                <td class="py-5 px-6 border-b text-right font-black text-xl text-slate-900 bg-slate-50/30 tabular-nums">
+                <td class="py-5 px-6 border-b-2 text-right font-black text-xl text-slate-900 bg-slate-50/30 tabular-nums">
                 {{ emp.totalHours.toFixed(1) }}
                 </td>
             </tr>
@@ -258,7 +270,7 @@ onMounted(loadData)
             </div>
             </div>
 
-            <div class="flex justify-around p-3 bg-white border-b border-slate-50">
+            <div class="flex justify-around p-3 bg-white border-b border-slate-300">
             <div v-for="(label, idx) in weekDateLabels" :key="idx" class="flex flex-col items-center gap-1">
                 <span class="text-[9px] font-bold text-slate-400 uppercase">{{ label.name.replace('週', '') }}</span>
                 <div :class="[

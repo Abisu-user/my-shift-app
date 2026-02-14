@@ -5,6 +5,7 @@ import { shiftService } from '../services/shiftService'
 const employees = ref([])
 const shifts = ref([])
 const loading = ref(true)
+const expandedEmpId = ref(null)
 
 const quickPresets = ref([])
 const presetInput = ref({ start: '', end: '', label: '' })
@@ -49,6 +50,10 @@ const weekDates = computed(() => {
   }
   return dates
 })
+
+const toggleEmpCard = (id) => {
+  expandedEmpId.value = expandedEmpId.value === id ? null : id
+}
 
 const removeSegment = (index) => {
   editingShift.value.segments.splice(index, 1)
@@ -344,7 +349,7 @@ onMounted(() => {
 
 <template>
   <div class="p-6 h-full flex flex-col">
-    <header class="flex justify-between items-center mb-6 shrink-0">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 shrink-0 gap-4">
       <div class="flex items-center gap-3">
         <h2 class="text-2xl font-black text-slate-800 tracking-tight">班表編輯器</h2>
         
@@ -384,7 +389,7 @@ onMounted(() => {
       <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
     </div>
 
-    <div v-else class="flex-1 overflow-auto bg-white rounded-2xl shadow-sm border border-slate-400 relative">
+    <div v-else class="hidden md:block landscape:blockflex-1 overflow-auto bg-white rounded-2xl shadow-sm border border-slate-400 relative">
       <table class="w-full text-left border-collapse">
         <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
           <tr>
@@ -445,6 +450,74 @@ onMounted(() => {
         </tbody>
       </table>
     </div>
+
+  <!-- 手機版員工卡片 -->
+  <div class="md:hidden landscape:hidden flex-1 overflow-y-auto space-y-3 pb-24">
+    <div v-if="isBatchMode" class="flex items-center justify-between bg-indigo-50 p-3 rounded-xl border border-indigo-100 mb-2">
+      <span class="text-xs font-bold text-indigo-600">批次模式：請勾選員工</span>
+      <div class="flex items-center gap-2">
+          <input 
+            type="checkbox" 
+            :checked="selectedEmpIds.length === employees.length && employees.length > 0"
+            @change="toggleSelectAll"
+            class="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+          >
+          <span class="text-xs font-bold text-slate-600">全選</span>
+      </div>
+    </div>
+
+    <div v-for="emp in employees" :key="emp.id" class="bg-white rounded-2xl border border-slate-300 overflow-hidden shadow-sm transition-all" 
+        :class="isBatchMode && selectedEmpIds.includes(emp.id) ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/10' : ''">
+      
+      <div 
+        @click="isBatchMode ? (selectedEmpIds.includes(emp.id) ? selectedEmpIds = selectedEmpIds.filter(id => id !== emp.id) : selectedEmpIds.push(emp.id)) : toggleEmpCard(emp.id)"
+        class="p-4 flex items-center justify-between border-b border-slate-200 active:bg-indigo-50 transition-colors cursor-pointer"
+        :class="expandedEmpId === emp.id ? 'bg-slate-50' : 'bg-white'"
+      >
+        <div class="flex items-center gap-3">
+          <div v-if="isBatchMode" class="pointer-events-none">
+              <input 
+                type="checkbox" 
+                :value="emp.id" 
+                v-model="selectedEmpIds"
+                class="w-6 h-6 rounded-lg border-2 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              >
+          </div>
+          <span class="font-black text-slate-700 text-lg">{{ emp.name }}</span>
+        </div>
+        
+        <span v-if="!isBatchMode" class="text-slate-400 transition-transform duration-300" :class="expandedEmpId === emp.id ? 'rotate-180' : ''">▼</span>
+      </div>
+
+      <div v-show="!isBatchMode && expandedEmpId === emp.id" class="p-3 grid grid-cols-2 gap-2 bg-slate-50/50">
+        <div 
+          v-for="date in weekDates" 
+          :key="date" 
+          @click="openEdit(emp, date)"
+          class="border border-slate-200 rounded-xl p-3 flex flex-col gap-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95 bg-white"
+          :class="getShift(emp.id, date) ? 'bg-indigo-50/50 border-indigo-200' : ''"
+        >
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-500">{{ formatDateLabel(date).split(' ')[0] }}</span>
+            <span class="text-[10px] font-black text-white bg-slate-400 px-1.5 rounded">{{ formatDateLabel(date).split(' ')[1].replace(/[()]/g, '') }}</span>
+          </div>
+          <div class="min-h-[30px] flex items-center justify-center">
+            <template v-if="getShift(emp.id, date) && getShift(emp.id, date).segments.length > 0">
+                <div class="flex flex-col gap-1 w-full">
+                  <div v-for="(seg, i) in getShift(emp.id, date).segments" :key="i" class="text-[10px] font-black text-indigo-600 bg-white border border-indigo-100 rounded px-1 text-center truncate">
+                    {{ seg.start }}-{{ seg.end }}
+                  </div>
+                </div>
+            </template>
+            <template v-else>
+                <span class="text-slate-300 text-2xl font-light">+</span>
+            </template>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
    <Teleport to="body">
         <Transition name="slide-up">
