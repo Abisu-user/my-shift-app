@@ -74,7 +74,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 md:p-8 max-w-7xl mx-auto animate-fade-in">
+  <div class="p-4 max-w-7xl mx-auto animate-fade-in">
    <StatsGroup 
       :monday="currentMonday" 
       :stats="statsData"

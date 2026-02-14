@@ -145,7 +145,7 @@ export const shiftService = {
 
     // 刪除員工
     async deleteEmployee(id) {
-        // 1. 先刪除該員工的所有班表紀錄 (解決 409 Conflict 錯誤)
+        // 刪除該員工的所有班表紀錄
         const { error: shiftError } = await supabase
             .from('shifts')
             .delete()
@@ -156,7 +156,7 @@ export const shiftService = {
             throw shiftError
         }
 
-        // 2. 班表刪乾淨了，現在可以放心刪除員工本人
+        //班表刪乾淨了，現在可以放心刪除員工本人
         const { error } = await supabase
             .from('employees')
             .delete()

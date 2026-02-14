@@ -39,14 +39,20 @@ const requestConfirm = (title, message, onConfirm, isDanger = true) => {
 // 計算本週日期
 const weekDates = computed(() => {
   const dates = []
-  const start = new Date(currentMonday.value)
-  const day = start.getDay()
-  const diff = start.getDate() - day + (day === 0 ? -6 : 1) 
-  start.setDate(diff)
+  const current = new Date(currentMonday.value)
+  const day = current.getDay()
+  const diffToMonday = day === 0 ? -6 : 1 - day 
+  
+  const monday = new Date(current)
+  monday.setDate(current.getDate() + diffToMonday)
   for (let i = 0; i < 7; i++) {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    dates.push(d.toISOString().split('T')[0])
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const dateStr = String(d.getDate()).padStart(2, '0')
+    
+    dates.push(`${year}-${month}-${dateStr}`)
   }
   return dates
 })
