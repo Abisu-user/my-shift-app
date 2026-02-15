@@ -60,6 +60,8 @@ const getShiftCategory = (start, end) => {
     const s = parseInt(start.replace(':', ''))
     const e = parseInt(end.replace(':', ''))
 
+    if (s === 930) return 'open_morning'
+    if (e === 2030) return 'closing'
     if (s <= 1000 && e >= 1700) return 'full'
     if (s <= 1000 && e < 1700) return 'morning'
     if (s >= 1400 && e >= 2000) return 'evening'
@@ -102,25 +104,53 @@ const processShiftData = computed(() => {
 // 🌟 修改後的過濾邏輯
 const filteredProcessedData = computed(() => {
     return processShiftData.value.filter(emp => {
-        // 姓名搜尋
-        const matchName = filters.value.name ? emp.name === filters.value.name : true
+    
+        if (filters.value.name && emp.name !== filters.value.name) {
+            return false
+        }
         
-        // 星期搜尋
-        let matchDay = true
         if (filters.value.day !== null) {
             const dayShifts = emp.days[filters.value.day]
-            matchDay = dayShifts && dayShifts.length > 0
+            
+            if (!dayShifts || dayShifts.length === 0) return false
+
+            if (filters.value.category) {
+                return dayShifts.some(seg => {
+                    const cat = getShiftCategory(seg.start, seg.end)
+                    
+                    // 直接符合
+                    if (cat === filters.value.category) return true
+
+                    if (filters.value.category === 'full') {
+                        const s = parseInt(seg.start.replace(':', ''))
+                        const e = parseInt(seg.end.replace(':', ''))
+                        return s <= 1000 && e >= 1700
+                    }
+                    
+                    return false
+                })
+            }
+            
+            return true
         }
 
-        // 班別篩選 (全日/早/晚)
-        let matchCategory = true
         if (filters.value.category) {
-            // 檢查本週是否有任一天含有符合該類別的時段
-            matchCategory = emp.days.some(daySegs => 
-                daySegs.some(seg => getShiftCategory(seg.start, seg.end) === filters.value.category)
+            return emp.days.some(daySegs => 
+                daySegs.some(seg => {
+                    const cat = getShiftCategory(seg.start, seg.end)
+                    if (cat === filters.value.category) return true
+                    
+                    if (filters.value.category === 'full') {
+                        const s = parseInt(seg.start.replace(':', ''))
+                        const e = parseInt(seg.end.replace(':', ''))
+                        return s <= 1000 && e >= 1700
+                    }
+                    return false
+                })
             )
         }
-        return matchName && matchDay && matchCategory
+
+        return true
     })
 })
 
@@ -201,6 +231,8 @@ onUnmounted(() => {
             <option value="full">🏠 全日班</option>
             <option value="morning">☀️ 早班</option>
             <option value="evening">🌙 晚班</option>
+            <option value="open_morning">☕ 開早班</option>
+            <option value="closing">🚪 收班</option>
             </select>
         </div>
 
@@ -281,6 +313,8 @@ onUnmounted(() => {
                                 'text-[9px] max-lg:landscape:text-[10px] lg:text-[15px] font-black py-1 px-1.5 rounded-xl border text-center shadow-sm transition-transform hover:scale-105',
                                 getShiftCategory(seg.start, seg.end) === 'full' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
                                 getShiftCategory(seg.start, seg.end) === 'morning' ? 'bg-sky-50 text-sky-700 border-sky-200' : 
+                                getShiftCategory(seg.start, seg.end) === 'open_morning' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                                getShiftCategory(seg.start, seg.end) === 'closing' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                                 'bg-indigo-50 text-indigo-700 border-indigo-200'
                                 ]">
                             {{ seg.start }} — {{ seg.end }}
@@ -360,10 +394,16 @@ onUnmounted(() => {
                                         'text-[9px] px-1.5 py-0.5 rounded font-bold',
                                         getShiftCategory(seg.start, seg.end) === 'full' ? 'bg-amber-100 text-amber-600' : 
                                         getShiftCategory(seg.start, seg.end) === 'morning' ? 'bg-sky-100 text-sky-600' : 
+                                        getShiftCategory(seg.start, seg.end) === 'open_morning' ? 'bg-emerald-100 text-emerald-600' : 
+                                        getShiftCategory(seg.start, seg.end) === 'closing' ? 'bg-purple-100 text-purple-600' :
                                         'bg-indigo-100 text-indigo-600'
                                         ]">
-                                        {{ getShiftCategory(seg.start, seg.end) === 'morning' ? '早' : 
-                                            getShiftCategory(seg.start, seg.end) === 'evening' ? '晚' : '全' }}
+                                        {{  
+                                            getShiftCategory(seg.start, seg.end) === 'open_morning' ? '開' : 
+                                            getShiftCategory(seg.start, seg.end) === 'closing' ? '收' : 
+                                            getShiftCategory(seg.start, seg.end) === 'morning' ? '早' : 
+                                            getShiftCategory(seg.start, seg.end) === 'evening' ? '晚' : '全'
+                                        }}
                                         </span>
                                     </div>
                                 </div>

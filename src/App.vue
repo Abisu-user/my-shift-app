@@ -6,6 +6,7 @@ import DashboardView from './components/DashboardView.vue'
 import EmployeesView from './components/EmployeesView.vue'
 import LoginModal from './components/LoginModal.vue'
 import ShiftEditorView from './components/ShiftEditorView.vue'
+import MonthlyReportView from './components/MonthlyReportView.vue'
 
 // 狀態管理
 const currentView = ref('dashboard')
@@ -86,6 +87,7 @@ onMounted(async () => {
           <button 
             v-for="item in [
               { id: 'dashboard', label: '儀表板', icon: '📊', auth: false },
+              { id: 'monthly-report', label: '月時數報表', icon: '📈', auth: true },
               { id: 'employees', label: '員工管理', icon: '👥', auth: true },
               { id: 'shift-editor', label: '排班編輯', icon: '🗓️', auth: true },
               { id: 'settings', label: '系統設定', icon: '⚙️', auth: false }
@@ -141,7 +143,11 @@ onMounted(async () => {
             <span class="text-slate-400 font-medium">系統</span>
             <span class="text-slate-200">/</span>
             <span class="bg-slate-50 px-2 py-0.5 rounded-md text-slate-600">
-              {{ currentView === 'dashboard' ? '儀表板' : currentView === 'employees' ? '員工管理' : currentView === 'shift-editor' ? '排班編輯' : '系統設定' }}
+              {{ 
+                currentView === 'dashboard' ? '儀表板' : 
+                currentView === 'monthly-report' ? '月時數報表' :
+                currentView === 'employees' ? '員工管理' : 
+                currentView === 'shift-editor' ? '排班編輯' : '系統設定' }}
             </span>
           </h2>
         </div>
@@ -165,6 +171,7 @@ onMounted(async () => {
 
       <div class="flex-1 overflow-y-auto md:overflow-hidden p-2 scroll-smooth">
         <DashboardView v-if="currentView === 'dashboard'" />
+        <MonthlyReportView v-if="currentView === 'monthly-report' && currentUser" />
         <EmployeesView v-if="currentView === 'employees' && currentUser" />
         <ShiftEditorView v-if="currentView === 'shift-editor' && currentUser" />
         <div v-if="currentView === 'settings'" class="p-10 text-center text-slate-400 font-bold animate-pulse">

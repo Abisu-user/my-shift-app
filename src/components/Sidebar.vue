@@ -8,6 +8,7 @@ defineEmits(['changeView', 'logout', 'login'])
 
 const menuItems = [
   { id: 'dashboard', label: '儀表板', icon: '📊', requiresAuth: false },
+  { id: 'monthly-report', label: '月時數報表', icon: '📈', requiresAuth: true },
   { id: 'employees', label: '員工管理', icon: '👥', requiresAuth: true },
   { id: 'shift-editor', label : '排班編輯', icon: '🗓️', requiresAuth: true },
   { id: 'settings', label: '系統設定', icon: '⚙️', requiresAuth: false },
