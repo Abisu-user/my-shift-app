@@ -14,6 +14,12 @@ const presetInput = ref({ start: '', end: '', label: '' })
 const currentMonday = ref(new Date())
 
 const datePicker = ref(null)
+const timeOptions = []
+for (let i = 0; i < 24; i++) {
+  const h = i.toString().padStart(2, '0')
+  timeOptions.push(`${h}:00`)
+  timeOptions.push(`${h}:30`)
+}
 
 // 編輯彈窗狀態
 const showEditModal = ref(false)
@@ -632,27 +638,74 @@ onMounted(() => {
                 </div>
             </div>
 
-            <div class="flex flex-col gap-2 border-t border-slate-200 pt-3">
-                <input v-model="presetInput.label" placeholder="時段名稱 (如：早班)" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                <div class="flex gap-2 items-center">
-                <input v-model="presetInput.start" type="time" class="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none">
-                <span class="text-slate-400">~</span>
-                <input v-model="presetInput.end" type="time" class="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none">
-                <button @click="addNewPreset" class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-black hover:bg-indigo-700 transition">＋新增</button>
-                </div>
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <div class="relative">
+                  <select 
+                      v-model="presetInput.start"
+                      class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                  >
+                      <option disabled value="">開始時間</option>
+                      <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                  </select>
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+              </div>
+
+              <div class="relative">
+                  <select 
+                      v-model="presetInput.end"
+                      class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                  >
+                      <option disabled value="">結束時間</option>
+                      <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                  </select>
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+              </div>
+
+              <input 
+                  type="text" 
+                  v-model="presetInput.label"
+                  placeholder="標籤 (選填，如: 早班)"
+                  class="bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500"
+              >
+          </div>
         </div>
 
           <div class="space-y-3 mb-6">
             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">當日詳細時段</label>
-            <div v-for="(seg, index) in editingShift.segments" :key="index" class="flex gap-2 items-end animate-fade-in">
-              <div class="flex-1">
-                <input v-model="seg.start" type="time" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 font-bold text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+           <div v-for="(seg, idx) in editingShift.segments" :key="idx" class="mb-4">
+    
+            <div class="flex items-center gap-2 mb-2">
+                <div class="relative flex-1">
+                    <select 
+                        v-model="seg.start"
+                        class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                    >
+                        <option disabled value="">開始</option>
+                        <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                    </select>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                </div>
+
+                <span class="text-slate-300 font-bold">→</span>
+
+                <div class="relative flex-1">
+                    <select 
+                        v-model="seg.end"
+                        class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                    >
+                        <option disabled value="">結束</option>
+                        <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                    </select>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                </div>
+
+                <button 
+                    @click="removeSegment(idx)"
+                    class="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                >
+                    🗑️
+                </button>
               </div>
-              <div class="flex-1">
-                <input v-model="seg.end" type="time" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 font-bold text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              </div>
-              <button @click="removeSegment(index)" class="mb-1 p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition">🗑️</button>
             </div>
           </div>
 
