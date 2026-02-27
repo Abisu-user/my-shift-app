@@ -27,7 +27,8 @@ const editingShift = ref({
   employee_id: null,
   employee_name: '',
   date: '',
-  segments: [] // <--- 改成陣列
+  segments: [],
+  delivery_fee: 0
 })
 
 const confirmConfig = ref({
@@ -190,29 +191,30 @@ const getShift = (empId, date) => {
 // --- 互動邏輯 ---
 
 const openEdit = (emp, date) => {
-  const existing = getShift(emp.id, date)
+  const existingShift = shifts.value.find(s => s.employee_id === emp.id && s.date === date);
   
-  // 深拷貝 segments 避免直接修改到畫面
-  let segments = []
-  if (existing && existing.segments) {
-    segments = JSON.parse(JSON.stringify(existing.segments))
+  if (existingShift) {
+    editingShift.value = {
+      employee_id: emp.id,
+      employee_name: emp.name,
+      date: date,
+      segments: JSON.parse(JSON.stringify(existingShift.segments || [])),
+      delivery_fee: existingShift?.delivery_fee || 0
+    };
   } else {
-    // 預設給一個時段
-    segments = [{ start: '09:00', end: '18:00' }]
+    editingShift.value = {
+      employee_id: emp.id,
+      employee_name: emp.name,
+      date: date,
+      segments: []
+    };
   }
-
-  editingShift.value = {
-    employee_id: emp.id,
-    employee_name: emp.name,
-    date: date,
-    segments: segments
-  }
-  showEditModal.value = true
-}
+  showEditModal.value = true;
+};
 
 // 新增一個時段
 const addSegment = () => {
-  editingShift.value.segments.push({ start: '12:00', end: '16:00' })
+  editingShift.value.segments.push({ start: '', end: '' })
 }
 
 const handleSave = async () => {
@@ -501,31 +503,35 @@ onMounted(() => {
         <span v-if="!isBatchMode" class="text-slate-400 transition-transform duration-300" :class="expandedEmpId === emp.id ? 'rotate-180' : ''">▼</span>
       </div>
 
-      <div v-show="!isBatchMode && expandedEmpId === emp.id" class="p-3 grid grid-cols-2 gap-2 bg-slate-50/50">
-        <div 
-          v-for="date in weekDates" 
-          :key="date" 
-          @click="openEdit(emp, date)"
-          class="border border-slate-200 rounded-xl p-3 flex flex-col gap-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all active:scale-95 bg-white"
-          :class="getShift(emp.id, date) ? 'bg-indigo-50/50 border-indigo-200' : ''"
-        >
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-slate-500">{{ formatDateLabel(date).split(' ')[0] }}</span>
-            <span class="text-[10px] font-black text-white bg-slate-400 px-1.5 rounded">{{ formatDateLabel(date).split(' ')[1].replace(/[()]/g, '') }}</span>
-          </div>
-          <div class="min-h-[30px] flex items-center justify-center">
-            <template v-if="getShift(emp.id, date) && getShift(emp.id, date).segments.length > 0">
-                <div class="flex flex-col gap-1 w-full">
-                  <div v-for="(seg, i) in getShift(emp.id, date).segments" :key="i" class="text-[10px] font-black text-indigo-600 bg-white border border-indigo-100 rounded px-1 text-center truncate">
-                    {{ seg.start }}-{{ seg.end }}
-                  </div>
+      <div v-show="!isBatchMode && expandedEmpId === emp.id" class="p-3 flex flex-col gap-3 bg-slate-50/50">
+          <div 
+            v-for="date in weekDates" 
+            :key="date" 
+            class="flex flex-col gap-2 bg-white rounded-2xl border border-slate-200 shadow-sm"
+          >
+            <div class="text-xl font-black text-slate-700 tracking-wider">
+              {{ new Date(date).getMonth() + 1 }}/{{ new Date(date).getDate() }}
+            </div>
+            
+            <button 
+              @click="openEdit(emp, date)"
+              class="w-full min-h-[3.5rem] rounded-xl flex flex-wrap items-center gap-2 transition-all active:scale-95"
+              :class="getShift(emp.id, date) ? 'bg-indigo-100 border border-indigo-200' : 'bg-slate-50 border-2 border-dashed border-slate-300'"
+            >
+              <template v-if="getShift(emp.id, date) && getShift(emp.id, date).segments.length > 0">
+                <div 
+                  v-for="(seg, i) in getShift(emp.id, date).segments" 
+                  :key="i" 
+                  class="bg-indigo-600 text-white px-5 py-1.5 rounded-lg text-sm font-black shadow-sm text-center w-full truncate"
+                >
+                  {{ seg.start }} - {{ seg.end }}
                 </div>
-            </template>
-            <template v-else>
-                <span class="text-slate-300 text-2xl font-light">+</span>
-            </template>
+              </template>
+              <template v-else>
+                <span class="text-slate-300 text-2xl font-light m-auto">+</span>
+              </template>
+            </button>
           </div>
-        </div>
       </div>
 
     </div>
@@ -614,8 +620,17 @@ onMounted(() => {
       <div v-if="showEditModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showEditModal = false"></div>
         
-        <div class="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl relative z-10 animate-scale-up max-h-[90vh] overflow-y-auto">
-          <h3 class="text-xl font-black text-slate-800 mb-1">編輯班表</h3>
+      <div class="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl relative z-10 animate-scale-up max-h-[90vh] overflow-y-auto">
+        <button 
+          @click="showEditModal = false" 
+          class="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all z-20"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h3 class="text-xl font-black text-slate-800 mb-1">編輯班表</h3>
           <p class="text-slate-500 font-bold text-sm mb-6">{{ editingShift.employee_name }} - {{ editingShift.date }}</p>
 
         <div class="mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
@@ -638,35 +653,45 @@ onMounted(() => {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-              <div class="relative">
-                  <select 
-                      v-model="presetInput.start"
-                      class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
-                  >
-                      <option disabled value="">開始時間</option>
-                      <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                  </select>
-                  <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
-              </div>
+            <div class="flex flex-col gap-3 mb-6">    
+              <div class="grid grid-cols-2 gap-3">
+                  <div class="relative">
+                      <select 
+                          v-model="presetInput.start"
+                          class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                      >
+                          <option disabled value="">開始時間</option>
+                          <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                      </select>
+                      <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                  </div>
 
-              <div class="relative">
-                  <select 
-                      v-model="presetInput.end"
-                      class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
-                  >
-                      <option disabled value="">結束時間</option>
-                      <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                  </select>
-                  <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                  <div class="relative">
+                      <select 
+                          v-model="presetInput.end"
+                          class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                      >
+                          <option disabled value="">結束時間</option>
+                          <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                      </select>
+                      <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                  </div>
               </div>
 
               <input 
                   type="text" 
                   v-model="presetInput.label"
                   placeholder="標籤 (選填，如: 早班)"
-                  class="bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500"
+                  class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500"
               >
+
+              <button 
+                  @click="addPreset"
+                  :disabled="!presetInput.start || !presetInput.end"
+                  class="w-full flex justify-center items-center gap-2 px-5 py-3 bg-emerald-500 text-white font-black text-sm rounded-xl shadow-sm hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              >
+                  <span class="text-lg leading-none">+</span> 儲存常用時段
+              </button>
           </div>
         </div>
 
@@ -709,9 +734,47 @@ onMounted(() => {
             </div>
           </div>
 
-          <button @click="addSegment" class="w-full py-3 mb-6 border border-dashed border-slate-300 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-50 hover:text-indigo-600 transition flex justify-center items-center gap-2">
-            <span>+</span> 增加手動時段
-          </button>
+          <div v-if="editingShift.segments.length === 0" class="text-center py-10 bg-white/50 rounded-xl border border-dashed border-indigo-200">
+              <p class="text-sm font-bold text-indigo-300 mb-4">這天目前沒有排班紀錄</p>
+              
+              <button 
+                  @click="addSegment"
+                  class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+              >
+                  <span class="text-xl">+</span> 手動新增時段
+              </button>
+          </div>
+
+          <div v-else class="flex flex-col gap-3">
+              <div v-for="(seg, idx) in editingShift.segments" :key="idx" class="flex items-center gap-2">
+                  </div>
+              
+              <button 
+                  @click="addSegment"
+                  class="w-full flex justify-center items-center gap-2 px-5 py-3 bg-indigo-600 text-white font-black text-sm rounded-xl shadow-sm hover:bg-indigo-700 transition-all active:scale-95 mb-4"
+              >
+                  <span class="text-lg leading-none">+</span> 手動新增時段
+              </button>
+          </div>
+
+          <div class="mt-6 pt-6 border-t border-slate-100">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <span class="text-lg">🛵</span> 外送津貼
+              </h4>
+              <span class="text-xs font-bold text-slate-400">當日累計金額</span>
+            </div>
+            
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">$</span>
+              <input 
+                type="number" 
+                v-model.number="editingShift.delivery_fee"
+                placeholder="請輸入金額"
+                class="w-full pl-8 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl font-black text-slate-700 focus:border-indigo-500 focus:bg-white transition-all outline-none"
+              >
+            </div>
+          </div>
 
           <div class="flex gap-3">
             <button @click="handleDelete" class="px-4 py-3 rounded-xl border border-rose-100 text-rose-500 font-bold hover:bg-rose-50 transition text-sm">全部清空</button>

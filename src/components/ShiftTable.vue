@@ -53,6 +53,14 @@ const weekDateLabels = computed(() => {
     return labels
 })
 
+const todayDateStr = computed(() => {
+    const d = new Date()
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const dateStr = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${dateStr}`
+})
+
 // 輔助函式：判斷時段屬於哪種班別
 const getShiftCategory = (start, end) => {
     if (!start || !end) return null
@@ -218,9 +226,15 @@ onUnmounted(() => {
 
         <div class="flex items-center gap-2 bg-white px-5 py-3 rounded-full border border-slate-500 shadow-sm min-w-[160px]">
             <span class="text-sm">📅</span>
-            <select v-model="filters.day" class="bg-transparent border-none outline-none text-sm font-black text-slate-600 cursor-pointer w-full">
-            <option :value="null">所有星期</option>
-            <option v-for="(label, idx) in weekDateLabels" :key="idx" :value="idx">{{ label.name }}</option>
+            <select v-model="filters.day" class="bg-transparent border-none outline-none text-xs font-black text-slate-600 cursor-pointer pr-4 appearance-none">
+                <option :value="null">所有星期</option>
+                <option value="0">星期一</option>
+                <option value="1">星期二</option>
+                <option value="2">星期三</option>
+                <option value="3">星期四</option>
+                <option value="4">星期五</option>
+                <option value="5">星期六</option>
+                <option value="6">星期日</option>
             </select>
         </div>
 
@@ -282,11 +296,21 @@ onUnmounted(() => {
                 員工姓名
                 </th>
                 
-                <th v-for="label in weekDateLabels" :key="label.date" class="py-2 px-2 md:py-5 md:px-4 min-w-[80px] md:min-w-[130px] landscape:min-w-[85px] border-b-2 border-r border-slate-300 text-center min-w-[90px] md:min-w-[130px]">
-                <div class="flex flex-col gap-1">
-                    <span class="text-xs font-black text-slate-400 uppercase">{{ label.name }}</span>
-                    <span class="text-base font-black text-slate-800">{{ label.date }}</span>
-                </div>
+                <th v-for="(label, idx) in weekDateLabels" :key="idx" 
+                    v-show="filters.day == null || filters.day == idx"
+                    :class="[
+                    'py-4 px-2 lg:px-4 text-center border-b w-24 lg:w-64 transition-all',
+                    label.fullDate === todayDateStr ? 'bg-indigo-50/80 border-indigo-300' : 'border-slate-200 bg-slate-50'
+                    ]">
+                    <div class="flex flex-col items-center gap-1">
+                        <span :class="['text-xs font-bold uppercase tracking-widest', label.fullDate === todayDateStr ? 'text-indigo-600' : 'text-slate-400']">
+                            {{ label.name }}
+                        </span>
+                        <span :class="['text-sm lg:text-lg font-black px-3 lg:px-4 py-1 rounded-xl shadow-sm border transition-all', 
+                            label.fullDate === todayDateStr ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-200 scale-110' : 'bg-white text-slate-700 border-slate-300']">
+                            {{ label.date }}
+                        </span>
+                    </div>
                 </th>
 
                 <th class="py-6 px-6 border-b-2 border-slate-300 text-right text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 w-[100px]">
@@ -304,33 +328,32 @@ onUnmounted(() => {
                 </div>
                 </td>
 
-                <td v-for="(dayShifts, dayIdx) in emp.days" :key="dayIdx" class="p-3 border-b-2 border-r border-slate-300 align-top">
-                    <div class="flex flex-col gap-1 md:gap-2 lg:min-h-[80px] justify-between">
-                        <div class="flex flex-col gap-1.5">
-                        <template v-if="dayShifts?.length > 0">
+                <td v-for="(dayShifts, idx) in emp.days" :key="idx" 
+                    v-show="filters.day == null || filters.day == idx"
+                    :class="[
+                    'py-2 lg:py-4 px-1 lg:px-2 border-b border-slate-300 align-top transition-colors',
+                    weekDateLabels[idx].fullDate === todayDateStr ? 'bg-indigo-50/30' : ''
+                    ]">
+                    
+                    <template v-if="dayShifts?.length > 0">
+                        <div class="flex flex-col gap-1 lg:gap-2">
                             <div v-for="(seg, sIdx) in dayShifts" :key="sIdx" 
                                 :class="[
-                                'text-[9px] max-lg:landscape:text-[10px] lg:text-[15px] font-black py-1 px-1.5 rounded-xl border text-center shadow-sm transition-transform hover:scale-105',
+                                'text-[9px] max-lg:landscape:text-[10px] lg:text-[12px] font-black py-1 px-1.5 rounded-xl border text-center shadow-sm transition-transform hover:scale-105',
+                                getShiftCategory(seg.start, seg.end) === 'open_morning' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                                getShiftCategory(seg.start, seg.end) === 'closing' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
                                 getShiftCategory(seg.start, seg.end) === 'full' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
                                 getShiftCategory(seg.start, seg.end) === 'morning' ? 'bg-sky-50 text-sky-700 border-sky-200' : 
-                                getShiftCategory(seg.start, seg.end) === 'open_morning' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                                getShiftCategory(seg.start, seg.end) === 'closing' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                                 'bg-indigo-50 text-indigo-700 border-indigo-200'
                                 ]">
-                            {{ seg.start }} — {{ seg.end }}
+                                {{ seg.start }} — {{ seg.end }}
                             </div>
-                        </template>
-                        <div v-else class="text-center py-6">
-                            <span class="text-slate-500 text-[8px] md:text-xs italic font-bold">休假</span>
+                            
+                            <div class="text-[9px] lg:text-xs text-slate-400 font-bold text-center mt-0.5">
+                                {{ calculateDayTotal(dayShifts) }}h
+                            </div>
                         </div>
-                        </div>
-
-                        <div v-if="dayShifts?.length > 0" class="mt-2 text-right">
-                        <span class="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
-                            {{ calculateDayTotal(dayShifts) }} hr
-                        </span>
-                        </div>
-                    </div>
+                    </template>
                 </td>
 
                 <td class="py-5 px-6 border-b-2 text-right font-black text-xl text-slate-900 bg-slate-50/30 tabular-nums">
@@ -365,23 +388,44 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <div class="flex justify-around p-3 bg-white border-b border-slate-100">
-                    <div v-for="(label, idx) in weekDateLabels" :key="idx" class="flex flex-col items-center gap-1">
-                        <span class="text-[9px] font-bold text-slate-400 uppercase">{{ label.name.replace('週', '') }}</span>
+                <div v-show="filters.day == null || filters.day === ''" class="flex justify-around p-3 bg-white border-b border-slate-100">
+                    <div v-for="(label, idx) in weekDateLabels" :key="idx" 
+                        class="flex flex-col items-center gap-1 transition-all"
+                        :class="label.fullDate === todayDateStr ? 'scale-110' : ''"
+                    >
+                        <span :class="['text-[9px] font-bold uppercase', 
+                            label.fullDate === todayDateStr ? 'text-indigo-600' : 'text-slate-400'
+                        ]">
+                            {{ label.name.replace('週', '') }}
+                        </span>
+                        
                         <div :class="[
-                        'w-1.5 h-1.5 rounded-full',
-                        emp.days[idx]?.length > 0 ? 'bg-indigo-500' : 'bg-slate-200'
+                            'w-1.5 h-1.5 rounded-full',
+                            emp.days[idx]?.length > 0 
+                                ? (label.fullDate === todayDateStr ? 'bg-indigo-600 ring-2 ring-indigo-200' : 'bg-indigo-500') 
+                                : 'bg-slate-200'
                         ]"></div>
                     </div>
                 </div>
 
-                <div class="p-4 space-y-3 bg-white">
-                    <div v-for="(dayShifts, dayIdx) in emp.days" :key="dayIdx">
-                        <div v-if="dayShifts?.length > 0" class="flex items-start justify-between">
+                <div class="p-3 flex flex-col gap-2 bg-white">
+                    <div v-for="(dayShifts, dayIdx) in emp.days" :key="dayIdx"
+                        v-show="filters.day == null || filters.day == dayIdx">
+                        
+                        <div v-if="dayShifts?.length > 0" 
+                            :class="['flex items-start justify-between p-2 -mx-2 rounded-xl transition-colors',
+                                    weekDateLabels[dayIdx].fullDate === todayDateStr ? 'bg-indigo-50/60 border border-indigo-100' : '']">
                             <div class="flex items-center gap-4">
                                 <div class="flex flex-col items-center min-w-[36px]">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase">{{ weekDateLabels[dayIdx].name }}</span>
-                                    <span class="text-xs font-black text-slate-700">{{ weekDateLabels[dayIdx].date }}</span>
+                                    <span :class="['text-[10px] font-bold uppercase', 
+                                            weekDateLabels[dayIdx].fullDate === todayDateStr ? 'text-indigo-600' : 'text-slate-400']">
+                                        {{ weekDateLabels[dayIdx].name }}
+                                    </span>
+                                    
+                                    <span :class="['text-xs font-black mt-0.5', 
+                                                weekDateLabels[dayIdx].fullDate === todayDateStr ? 'text-indigo-700 scale-110' : 'text-slate-700']">
+                                        {{ weekDateLabels[dayIdx].date }}
+                                    </span>
                                 </div>
                                 
                                 <div class="flex flex-col gap-1">
@@ -390,6 +434,7 @@ onUnmounted(() => {
                                         <span class="text-xs font-black text-slate-600 tabular-nums">
                                         {{ seg.start }} — {{ seg.end }}
                                         </span>
+                                        
                                         <span :class="[
                                         'text-[9px] px-1.5 py-0.5 rounded font-bold',
                                         getShiftCategory(seg.start, seg.end) === 'full' ? 'bg-amber-100 text-amber-600' : 
