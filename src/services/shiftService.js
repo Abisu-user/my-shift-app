@@ -44,7 +44,8 @@ export const shiftService = {
             {
             employee_id: shiftData.employee_id,
             date: shiftData.date,
-            segments: shiftData.segments // <--- 改傳 JSON 陣列
+            segments: shiftData.segments,
+            delivery_fee: shiftData.delivery_fee
             }
         ], { onConflict: 'employee_id, date' })
         .select()

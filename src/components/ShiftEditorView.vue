@@ -206,7 +206,8 @@ const openEdit = (emp, date) => {
       employee_id: emp.id,
       employee_name: emp.name,
       date: date,
-      segments: []
+      segments: [],
+      delivery_fee: 0
     };
   }
   showEditModal.value = true;
@@ -223,7 +224,7 @@ const handleSave = async () => {
     const cleanSegments = editingShift.value.segments.filter(s => s.start && s.end)
     
     // 如果全部都刪光了，等於刪除班表
-    if (cleanSegments.length === 0) {
+    if (cleanSegments.length === 0 && (!editingShift.value.delivery_fee || editingShift.value.delivery_fee === 0)) {
       await handleDelete()
       return
     }
