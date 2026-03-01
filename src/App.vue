@@ -8,6 +8,7 @@ import LoginModal from './components/LoginModal.vue'
 import ShiftEditorView from './components/ShiftEditorView.vue'
 import MonthlyReportView from './components/MonthlyReportView.vue'
 import EmployeeReportView from './components/EmployeeReportView.vue'
+import CalendarSettingsView from './components/CalendarSettingsView.vue'
 
 // 狀態管理
 const currentView = ref('dashboard')
@@ -92,6 +93,7 @@ onMounted(async () => {
               { id: 'monthly-report', label: '薪資報表', icon: '📈', auth: true },
               { id: 'employees', label: '員工管理', icon: '👥', auth: true },
               { id: 'shift-editor', label: '排班編輯', icon: '🗓️', auth: true },
+              { id: 'calendar-settings', label: '行事曆', icon: '📅', auth: true },
               { id: 'settings', label: '系統設定', icon: '⚙️', auth: false }
             ]" 
             v-show="!item.auth || currentUser"
@@ -148,8 +150,9 @@ onMounted(async () => {
               {{ 
                 currentView === 'dashboard' ? '儀表板' : 
                 currentView === 'employee-report' ? '時數總表' :
-                  currentView === 'monthly-report' ? '薪資報表' :
+                currentView === 'monthly-report' ? '薪資報表' :
                 currentView === 'employees' ? '員工管理' : 
+                currentView === 'calendar-settings' ? '行事曆設定' :
                 currentView === 'shift-editor' ? '排班編輯' : '系統設定' }}
             </span>
           </h2>
@@ -178,6 +181,7 @@ onMounted(async () => {
         <EmployeeReportView v-if="currentView === 'employee-report'" />
         <EmployeesView v-if="currentView === 'employees' && currentUser" />
         <ShiftEditorView v-if="currentView === 'shift-editor' && currentUser" />
+        <CalendarSettingsView v-if="currentView === 'calendar-settings' && currentUser" />
         <div v-if="currentView === 'settings'" class="p-10 text-center text-slate-400 font-bold animate-pulse">
           <p class="text-6xl mb-4">🚧</p>
           設定頁面建構中...

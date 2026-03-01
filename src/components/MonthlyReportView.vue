@@ -26,25 +26,38 @@ const fetchMonthlyData = async () => {
     // 彙總每位員工時數
     reportData.value = employees.map(emp => {
       const empShifts = monthShifts.filter(s => s.employee_id === emp.id)
-      let totalHours = 0
+      let totalNormalHours = 0 
+      let totalDoubleHours = 0  
       let totalDeliveryFee = 0
+      let totalHours = 0
       
       empShifts.forEach(s => {
+        let dailyHours = 0;
         if (s.segments) {
           s.segments.forEach(seg => {
             const startH = parseInt(seg.start.split(':')[0])
             const endH = parseInt(seg.end.split(':')[0])
-            totalHours += (endH - startH)
+            dailyHours += (endH - startH) 
           })
         }
+        
+        // 🌟 關鍵分類：根據這天是不是雙倍薪，放入不同的池子
+        if (s.isDoublePay) {
+          totalDoubleHours += dailyHours;
+        } else {
+          totalNormalHours += dailyHours;
+        }
+        
         totalDeliveryFee += (s.delivery_fee || 0)
       })
       return { 
         ...emp, 
-        totalHours, 
-        totalDeliveryFee,
-        deductLabor: true,  
-        deductHealth: true  
+        totalHours: totalNormalHours + totalDoubleHours, // 總時數依然加總給畫面看
+        totalNormalHours,
+        totalDoubleHours,
+        totalDeliveryFee, 
+        deductLabor: true, 
+        deductHealth: true
       }
     })
   } catch (error) {
@@ -58,14 +71,13 @@ const fetchMonthlyData = async () => {
 onMounted(fetchMonthlyData)
 
 const calculateNetPay = (emp) => {
-  // 使用 Number() 強制轉型，並用 || 0 確保如果沒填寫時當作 0
   const wage = Number(baseHourlyWage.value) || 0;
-  const hours = Number(emp.totalHours) || 0;
+  const normalHours = Number(emp.totalNormalHours) || 0;
+  const doubleHours = Number(emp.totalDoubleHours) || 0;
   const delivery = Number(emp.totalDeliveryFee) || 0;
   const labor = emp.deductLabor ? (Number(laborFee.value) || 0) : 0;
   const health = emp.deductHealth ? (Number(healthFee.value) || 0) : 0;
-
-  const total = (hours * wage) + delivery - labor - health;
+  const total = (normalHours * wage) + (doubleHours * wage * 2) + delivery - labor - health;
   
   return total;
 }
@@ -138,8 +150,13 @@ watch(selectedMonth, fetchMonthlyData)
               <td class="py-4 px-6 text-right font-bold" :class="emp.totalDeliveryFee > 0 ? 'text-orange-500' : 'text-slate-300'">
                 ${{ (emp.totalDeliveryFee || 0).toLocaleString() }}
               </td>
-              <td class="py-4 px-6 text-right font-bold text-slate-400">
-                ${{ (((emp.totalHours || 0) * (baseHourlyWage || 0)) + (emp.totalDeliveryFee || 0)).toLocaleString() }}
+              <td class="py-4 px-6 text-right font-bold">
+                <div class="text-slate-400">
+                  ${{ (((emp.totalNormalHours || 0) * (baseHourlyWage || 0)) + ((emp.totalDoubleHours || 0) * (baseHourlyWage || 0) * 2) + (emp.totalDeliveryFee || 0)).toLocaleString() }}
+                </div>
+                <div v-if="emp.totalDoubleHours > 0" class="text-[10px] text-rose-500 mt-1">
+                  含雙倍 {{ emp.totalDoubleHours }}h
+                </div>
               </td>
               <td class="py-4 px-6 text-center">
                 <div class="flex justify-center gap-4">
@@ -182,10 +199,17 @@ watch(selectedMonth, fetchMonthlyData)
               <p class="text-[10px] font-bold text-slate-400">外送加給</p>
               <p class="font-bold text-slate-600">${{ (emp.totalDeliveryFee || 0).toLocaleString() }}</p>
             </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400">應領小計</p>
-              <p class="font-bold text-slate-400">${{ (((emp.totalHours || 0) * (baseHourlyWage || 0)) + (emp.totalDeliveryFee || 0)).toLocaleString() }}</p>
+           <div>
+            <p class="text-[10px] font-bold text-slate-400">應領小計</p>
+            <div class="flex items-center gap-2">
+              <p class="font-bold text-slate-400">
+                ${{ (((emp.totalNormalHours || 0) * (baseHourlyWage || 0)) + ((emp.totalDoubleHours || 0) * (baseHourlyWage || 0) * 2) + (emp.totalDeliveryFee || 0)).toLocaleString() }}
+              </p>
+              <span v-if="emp.totalDoubleHours > 0" class="px-1.5 py-0.5 bg-rose-50 text-rose-500 rounded text-[10px] font-black">
+                雙倍 {{ emp.totalDoubleHours }}h
+              </span>
             </div>
+          </div>
           </div>
 
           <div class="flex items-center justify-between">

@@ -28,7 +28,8 @@ const editingShift = ref({
   employee_name: '',
   date: '',
   segments: [],
-  delivery_fee: 0
+  delivery_fee: 0,
+  isDoublePay: false
 })
 
 const confirmConfig = ref({
@@ -190,8 +191,10 @@ const getShift = (empId, date) => {
 
 // --- 互動邏輯 ---
 
-const openEdit = (emp, date) => {
+const openEdit = async (emp, date) => {
   const existingShift = shifts.value.find(s => s.employee_id === emp.id && s.date === date);
+  const daySetting = await shiftService.fetchDaySetting(date) 
+  const isHoliday = daySetting?.isDoublePay || false
   
   if (existingShift) {
     editingShift.value = {
@@ -199,6 +202,7 @@ const openEdit = (emp, date) => {
       employee_name: emp.name,
       date: date,
       segments: JSON.parse(JSON.stringify(existingShift.segments || [])),
+      isDoublePay: existingShift.isDoublePay || false,
       delivery_fee: existingShift?.delivery_fee || 0
     };
   } else {
@@ -207,6 +211,7 @@ const openEdit = (emp, date) => {
       employee_name: emp.name,
       date: date,
       segments: [],
+      isDoublePay: isHoliday,
       delivery_fee: 0
     };
   }
@@ -776,6 +781,18 @@ onMounted(() => {
               >
             </div>
           </div>
+
+          <label class="flex items-center gap-3 p-4 mt-4 bg-rose-50 rounded-2xl cursor-pointer border border-rose-100 hover:bg-rose-100/50 transition-colors">
+            <input 
+              type="checkbox" 
+              v-model="editingShift.isDoublePay" 
+              class="w-5 h-5 rounded border-rose-300 text-rose-500 focus:ring-rose-500"
+            >
+            <div class="flex flex-col">
+              <span class="font-bold text-rose-700 text-sm">此班表為雙倍薪資</span>
+              <span class="text-xs text-rose-500 mt-0.5">系統已自動同步日曆設定，您也可手動調整</span>
+            </div>
+          </label>
 
           <div class="flex gap-3">
             <button @click="handleDelete" class="px-4 py-3 rounded-xl border border-rose-100 text-rose-500 font-bold hover:bg-rose-50 transition text-sm">全部清空</button>

@@ -45,7 +45,8 @@ export const shiftService = {
             employee_id: shiftData.employee_id,
             date: shiftData.date,
             segments: shiftData.segments,
-            delivery_fee: shiftData.delivery_fee
+            delivery_fee: shiftData.delivery_fee,
+            isDoublePay: shiftData.isDoublePay
             }
         ], { onConflict: 'employee_id, date' })
         .select()
@@ -164,5 +165,62 @@ export const shiftService = {
             .eq('id', id)
         
         if (error) throw error
-    }
+    },
+
+    // 抓取單日設定 (給「排班編輯器」判斷雙倍薪使用)
+    async fetchDaySetting(date) {
+        try {
+            const { data, error } = await supabase
+                .from('calendar_settings')
+                .select('*')
+                .eq('date', date)
+                .single() // 因為一天只有一筆設定，所以用 single()
+            
+            // PGRST116 是 Supabase「找不到資料」的錯誤碼
+            // 找不到資料是正常的，代表那天是一般日子（沒有特別設定）
+            if (error && error.code !== 'PGRST116') { 
+                console.error('抓取單日設定錯誤:', error.message)
+                return null
+            }
+            return data
+        } catch (err) {
+            console.error('fetchDaySetting 發生例外:', err)
+            return null
+        }
+    },
+
+    // 儲存單日設定 (給「日曆設定頁面」儲存時使用)
+    async saveDaySetting(date, isDoublePay, note) {
+        const { data, error } = await supabase
+            .from('calendar_settings')
+            .upsert([ 
+                // upsert 會自動判斷：如果這個日期已經有資料就「更新」，沒有就「新增」
+                { 
+                    date: date, 
+                    isDoublePay: isDoublePay, 
+                    note: note 
+                }
+            ], { onConflict: 'date' }) // 以 date 欄位作為判斷重複的依據
+        
+        if (error) {
+            console.error('儲存單日設定錯誤:', error.message)
+            throw error
+        }
+        return data
+    },
+
+    // 抓取區間設定 (給「日曆設定頁面」一次載入整個月的標記使用)
+    async fetchMonthSettings(startDate, endDate) {
+        const { data, error } = await supabase
+            .from('calendar_settings')
+            .select('*')
+            .gte('date', startDate)
+            .lte('date', endDate)
+        
+        if (error) {
+            console.error('抓取月份設定錯誤:', error.message)
+            throw error
+        }
+        return data || []
+    },
 }
