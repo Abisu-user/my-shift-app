@@ -55,6 +55,19 @@ export const shiftService = {
         return data[0]
     },
 
+    // 批量儲存排班資料
+    async batchSaveShifts(shiftsArray) {
+        const { data, error } = await supabase
+            .from('shifts')
+            .insert(shiftsArray) // 一次把整個陣列的新班表塞進資料庫
+        
+        if (error) {
+            console.error('批量儲存班表錯誤:', error.message)
+            throw error
+        }
+        return data
+    },
+
     // 刪除排班資料
     async deleteShift(employeeId, date) {
         const { error } = await supabase

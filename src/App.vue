@@ -9,6 +9,7 @@ import ShiftEditorView from './components/ShiftEditorView.vue'
 import MonthlyReportView from './components/MonthlyReportView.vue'
 import EmployeeReportView from './components/EmployeeReportView.vue'
 import CalendarSettingsView from './components/CalendarSettingsView.vue'
+import AIParsingView from './components/AIParsingView.vue'
 
 // 狀態管理
 const currentView = ref('dashboard')
@@ -93,6 +94,7 @@ onMounted(async () => {
               { id: 'monthly-report', label: '薪資報表', icon: '📈', auth: true },
               { id: 'employees', label: '員工管理', icon: '👥', auth: true },
               { id: 'shift-editor', label: '排班編輯', icon: '🗓️', auth: true },
+              { id: 'ai-parsing', label: 'AI 辨識班表', icon: '🤖', auth: true },
               { id: 'calendar-settings', label: '行事曆', icon: '📅', auth: true },
               { id: 'settings', label: '系統設定', icon: '⚙️', auth: false }
             ]" 
@@ -153,6 +155,7 @@ onMounted(async () => {
                 currentView === 'monthly-report' ? '薪資報表' :
                 currentView === 'employees' ? '員工管理' : 
                 currentView === 'calendar-settings' ? '行事曆設定' :
+                currentView === 'ai-parsing' ? 'AI 辨識班表' :
                 currentView === 'shift-editor' ? '排班編輯' : '系統設定' }}
             </span>
           </h2>
@@ -181,6 +184,7 @@ onMounted(async () => {
         <EmployeeReportView v-if="currentView === 'employee-report'" />
         <EmployeesView v-if="currentView === 'employees' && currentUser" />
         <ShiftEditorView v-if="currentView === 'shift-editor' && currentUser" />
+        <AIParsingView v-if="currentView === 'ai-parsing' && currentUser" />
         <CalendarSettingsView v-if="currentView === 'calendar-settings' && currentUser" />
         <div v-if="currentView === 'settings'" class="p-10 text-center text-slate-400 font-bold animate-pulse">
           <p class="text-6xl mb-4">🚧</p>

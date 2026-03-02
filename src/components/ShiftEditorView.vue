@@ -5,7 +5,6 @@ import { shiftService } from '../services/shiftService'
 const employees = ref([])
 const shifts = ref([])
 const loading = ref(true)
-const expandedEmpId = ref(null)
 
 const quickPresets = ref([])
 const presetInput = ref({ start: '', end: '', label: '' })
@@ -31,6 +30,15 @@ const editingShift = ref({
   delivery_fee: 0,
   isDoublePay: false
 })
+
+// 當使用者選好照片後觸發
+const handlePreview = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // 產生一個本地預覽網址
+  previewImage.value = URL.createObjectURL(file)
+}
 
 const confirmConfig = ref({
   show: false,
@@ -382,7 +390,7 @@ onMounted(() => {
             <span v-else>批次操作</span>
             <span v-if="isBatchMode" class="bg-white/20 px-1.5 rounded text-[10px]">{{ selectedEmpIds.length }}</span>
         </button>
-        </div>
+      </div>
       
       <div class="flex items-center gap-4 bg-white p-1 rounded-xl shadow-sm border border-slate-400 relative">
         <button @click="changeWeek(-1)" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 font-bold">&lt; 上週</button>

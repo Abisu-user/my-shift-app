@@ -12,6 +12,7 @@ const menuItems = [
     { id: 'monthly-report', label: '薪資報表', icon: '📈', requiresAuth: true },
   { id: 'employees', label: '員工管理', icon: '👥', requiresAuth: true },
   { id: 'shift-editor', label : '排班編輯', icon: '🗓️', requiresAuth: true },
+  { id: 'ai-parsing', label: 'AI 辨識班表', icon: '🤖', requiresAuth: true },
   { id: 'calendar-settings', label: '行事曆', icon: '📅', requiresAuth: true },
   { id: 'settings', label: '系統設定', icon: '⚙️', requiresAuth: false },
 ]
