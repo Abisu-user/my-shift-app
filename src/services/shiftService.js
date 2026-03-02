@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase.js'
 
 // 時間轉分鐘計算工具
-const timeToMinutes = (timeStr) => {
+export const timeToMinutes = (timeStr) => {
   if (!timeStr) return 0
   const [hrs, mins] = timeStr.split(':').map(Number)
   return hrs * 60 + mins
@@ -141,26 +141,40 @@ export const shiftService = {
     },
 
     // 新增員工
-    async addEmployee(name, status = 'normal') {
+    async addEmployee(employeeData) {
         const { data, error } = await supabase
             .from('employees')
             .insert([
-                {
-                    name: name, 
-                    status: status 
+                { 
+                    name: employeeData.name, 
+                    has_labor_ins: employeeData.has_labor_ins || false,
+                    has_health_ins: employeeData.has_health_ins || false,
+                    status: 'normal' 
                 }
             ])
             .select()
-
+        
+        if (error) throw error
+        return data
+    },
+    
+    // 更新員工資料
+    async updateEmployee(id, updates) {
+        const { data, error } = await supabase
+            .from('employees')
+            .update(updates)
+            .eq('id', id)
+            .select()
+        
         if (error) {
-            console.error('新增員工錯誤:', error.message)
+            console.error('更新員工失敗:', error.message)
             throw error
         }
+        return data
     },
 
     // 刪除員工
     async deleteEmployee(id) {
-        // 刪除該員工的所有班表紀錄
         const { error: shiftError } = await supabase
             .from('shifts')
             .delete()
@@ -171,7 +185,6 @@ export const shiftService = {
             throw shiftError
         }
 
-        //班表刪乾淨了，現在可以放心刪除員工本人
         const { error } = await supabase
             .from('employees')
             .delete()

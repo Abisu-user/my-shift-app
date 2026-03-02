@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { shiftService } from '../services/shiftService'
+import { shiftService, timeToMinutes } from '../services/shiftService'
 
 const selectedMonth = ref(new Date().toISOString().substring(0, 7))
 const reportData = ref([])
@@ -21,7 +21,8 @@ const fetchMonthlyData = async () => {
     const month = parseInt(selectedMonth.value.split('-')[1])
     
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+    const lastDay = new Date(year, month, 0).getDate()
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
     const { employees } = await shiftService.fetchInitialData()
     const monthShifts = await shiftService.fetchShiftsByRange(startDate, endDate)

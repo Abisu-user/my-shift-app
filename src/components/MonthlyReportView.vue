@@ -6,8 +6,8 @@ const selectedMonth = ref(new Date().toISOString().substring(0, 7)) // 格式: Y
 const reportData = ref([])
 const isLoading = ref(false)
 const baseHourlyWage = ref(200)
-const laborFee = ref(500) // 假設勞保費
-const healthFee = ref(400) // 假設健保費
+const laborFee = ref(450) // 假設勞保費
+const healthFee = ref(285) // 假設健保費
 
 
 const fetchMonthlyData = async () => {
@@ -16,52 +16,63 @@ const fetchMonthlyData = async () => {
     const year = parseInt(selectedMonth.value.split('-')[0])
     const month = parseInt(selectedMonth.value.split('-')[1])
     
-    // 計算該月第一天與最後一天
+    // 🌟 修正：確保包含月底最後一天
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+    const lastDay = new Date(year, month, 0).getDate()
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-    const { employees, rawShifts } = await shiftService.fetchInitialData()
+    const { employees } = await shiftService.fetchInitialData()
     const monthShifts = await shiftService.fetchShiftsByRange(startDate, endDate)
+    const monthSettings = await shiftService.fetchMonthSettings(startDate, endDate)
 
-    // 彙總每位員工時數
+    // 🌟 為了效能，先將設定轉成 Map (物件格式) 方便查詢
+    const settingsMap = {}
+    monthSettings.forEach(set => {
+      settingsMap[set.date] = set
+    })
+
     reportData.value = employees.map(emp => {
       const empShifts = monthShifts.filter(s => s.employee_id === emp.id)
       let totalNormalHours = 0 
       let totalDoubleHours = 0  
       let totalDeliveryFee = 0
-      let totalHours = 0
-      
+
       empShifts.forEach(s => {
-        let dailyHours = 0;
-        if (s.segments) {
-          s.segments.forEach(seg => {
-            const startH = parseInt(seg.start.split(':')[0])
-            const endH = parseInt(seg.end.split(':')[0])
-            dailyHours += (endH - startH) 
-          })
-        }
-        
-        // 🌟 關鍵分類：根據這天是不是雙倍薪，放入不同的池子
-        if (s.isDoublePay) {
-          totalDoubleHours += dailyHours;
+        let dailyHours = 0
+        s.segments.forEach(seg => {
+          const startH = parseInt(seg.start.split(':')[0]) + (seg.start.includes(':30') ? 0.5 : 0)
+          const endH = parseInt(seg.end.split(':')[0]) + (seg.end.includes(':30') ? 0.5 : 0)
+          dailyHours += (endH - startH)
+        })
+
+        totalDeliveryFee += Number(s.delivery_fee || 0)
+        const isDoublePayDay = settingsMap[s.date]?.isDoublePay === true
+
+        if (isDoublePayDay) {
+          totalDoubleHours += dailyHours
         } else {
-          totalNormalHours += dailyHours;
+          totalNormalHours += dailyHours
         }
-        
-        totalDeliveryFee += (s.delivery_fee || 0)
       })
-      return { 
-        ...emp, 
-        totalHours: totalNormalHours + totalDoubleHours, // 總時數依然加總給畫面看
+
+      // 計算金額
+      const basePay = (totalNormalHours + totalDoubleHours) * baseHourlyWage.value
+      const doublePayBonus = totalDoubleHours * baseHourlyWage.value
+
+      return {
+        ...emp,
+        totalHours: totalNormalHours + totalDoubleHours,
         totalNormalHours,
         totalDoubleHours,
-        totalDeliveryFee, 
-        deductLabor: true, 
-        deductHealth: true
+        totalDeliveryFee,
+        basePay,          // 基本薪資 (時數 * 時薪)
+        doublePayBonus,   // 雙倍加成金額 (額外的一倍)
+        deductLabor: emp.has_labor_ins || false, 
+        deductHealth: emp.has_health_ins || false
       }
     })
   } catch (error) {
-    console.error('讀取報表失敗:', error)
+    console.error('Fetch error:', error)
   } finally {
     isLoading.value = false
   }
@@ -135,27 +146,33 @@ watch(selectedMonth, fetchMonthlyData)
             <tr class="border-b border-slate-100">
               <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest">員工姓名</th>
               <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">當月總時數</th>
-              <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">外送加給</th> 
-              <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">預估薪資</th>
+              <th class="px-4 py-4 text-xs font-bold text-rose-500 uppercase tracking-widest text-center">雙倍加成</th>
+              <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">外送加給</th> 
+              <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">預估薪資</th>
               <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">扣除項目</th>
-              <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">實領薪資</th>
+              <th class="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">實領薪資</th>
             </tr>
           </thead>
           <tbody v-if="!isLoading">
-            <tr v-for="emp in reportData" :key="emp.id" class="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
+            <tr v-for="emp in reportData" :key="emp.id" class="border-b border-slate-200 hover:bg-slate-50/80 transition-colors">
               <td class="py-4 px-6 font-bold text-slate-700">{{ emp.name }}</td>
               <td class="py-4 px-6 text-right">
                 <span class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full font-black text-sm">{{ emp.totalHours }}h</span>
               </td>
-              <td class="py-4 px-6 text-right font-bold" :class="emp.totalDeliveryFee > 0 ? 'text-orange-500' : 'text-slate-300'">
+
+              <td class="px-4 py-4">
+                <div :class="emp.doublePayBonus > 0 ? 'text-rose-600' : 'text-slate-400'">
+                  <p class="text-sm text-center font-black ">${{ (emp.doublePayBonus || 0).toLocaleString() }}</p>
+                  <p class="text-[10px] text-center font-bold">雙倍 {{ emp.totalDoubleHours }}h</p>
+                </div>
+              </td>
+
+              <td class="py-4 px-6 text-center font-bold" :class="emp.totalDeliveryFee > 0 ? 'text-orange-500' : 'text-slate-400'">
                 ${{ (emp.totalDeliveryFee || 0).toLocaleString() }}
               </td>
-              <td class="py-4 px-6 text-right font-bold">
+              <td class="py-4 px-6 text-center font-bold">
                 <div class="text-slate-400">
                   ${{ (((emp.totalNormalHours || 0) * (baseHourlyWage || 0)) + ((emp.totalDoubleHours || 0) * (baseHourlyWage || 0) * 2) + (emp.totalDeliveryFee || 0)).toLocaleString() }}
-                </div>
-                <div v-if="emp.totalDoubleHours > 0" class="text-[10px] text-rose-500 mt-1">
-                  含雙倍 {{ emp.totalDoubleHours }}h
                 </div>
               </td>
               <td class="py-4 px-6 text-center">
@@ -170,7 +187,7 @@ watch(selectedMonth, fetchMonthlyData)
                   </label>
                 </div>
               </td>
-              <td class="py-4 px-6 text-right font-black text-emerald-600 text-lg">
+              <td class="py-4 px-6 text-center font-black text-emerald-600 text-lg">
                 ${{ calculateNetPay(emp).toLocaleString() }}
               </td>
             </tr>
@@ -203,7 +220,7 @@ watch(selectedMonth, fetchMonthlyData)
             <p class="text-[10px] font-bold text-slate-400">應領小計</p>
             <div class="flex items-center gap-2">
               <p class="font-bold text-slate-400">
-                ${{ (((emp.totalNormalHours || 0) * (baseHourlyWage || 0)) + ((emp.totalDoubleHours || 0) * (baseHourlyWage || 0) * 2) + (emp.totalDeliveryFee || 0)).toLocaleString() }}
+                ${{ (emp.basePay + emp.doublePayBonus + emp.totalDeliveryFee - (emp.deductLabor ? laborFee : 0) - (emp.deductHealth ? healthFee : 0)).toLocaleString() }}
               </p>
               <span v-if="emp.totalDoubleHours > 0" class="px-1.5 py-0.5 bg-rose-50 text-rose-500 rounded text-[10px] font-black">
                 雙倍 {{ emp.totalDoubleHours }}h

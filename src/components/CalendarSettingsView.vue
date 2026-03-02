@@ -27,7 +27,8 @@ const loadMonthSettings = async () => {
     
     // 計算當月第一天與最後一天 (格式: YYYY-MM-DD)
     const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
-    const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0]
+    const lastDay = new Date(year, month + 1, 0).getDate()
+    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
     // 呼叫 shiftService 去資料庫拿資料
     const data = await shiftService.fetchMonthSettings(startDate, endDate)
