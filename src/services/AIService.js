@@ -7,6 +7,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 const app = express()
 app.use(cors())
 
+app.get('/api/ping', (req, res) => {
+  res.status(200).send('伺服器醒著喔！(pong)')
+})
+
 // 設定 multer 將上傳的檔案暫存在記憶體中
 const upload = multer({ storage: multer.memoryStorage() })
 

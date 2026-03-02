@@ -36,7 +36,7 @@ const handlePreview = async (event) => {
     formData.append('employeeNames', namesString)
     
     // 2. 呼叫我們剛寫好的 Node.js API (請確認 port 是否正確)
-    const response = await fetch('http://localhost:3000/api/parse-schedule', {
+    const response = await fetch('https://my-shift-app.onrender.com/api/parse-schedule', {
       method: 'POST',
       body: formData
     })
