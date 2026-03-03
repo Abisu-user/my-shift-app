@@ -8,6 +8,7 @@ const loading = ref(true)
 
 const quickPresets = ref([])
 const presetInput = ref({ start: '', end: '', label: '' })
+const expandedEmpId = ref(null)
 
 // 日期導航
 const currentMonday = ref(new Date())

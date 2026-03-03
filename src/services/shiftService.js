@@ -59,7 +59,10 @@ export const shiftService = {
     async batchSaveShifts(shiftsArray) {
         const { data, error } = await supabase
             .from('shifts')
-            .insert(shiftsArray) // 一次把整個陣列的新班表塞進資料庫
+            .upsert(shiftsArray, { 
+                onConflict: 'employee_id, date',
+                ignoreDuplicates: true
+            })
         
         if (error) {
             console.error('批量儲存班表錯誤:', error.message)
@@ -200,7 +203,7 @@ export const shiftService = {
                 .from('calendar_settings')
                 .select('*')
                 .eq('date', date)
-                .single() // 因為一天只有一筆設定，所以用 single()
+                .maybeSingle()
             
             // PGRST116 是 Supabase「找不到資料」的錯誤碼
             // 找不到資料是正常的，代表那天是一般日子（沒有特別設定）

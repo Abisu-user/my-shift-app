@@ -6,8 +6,8 @@ const selectedMonth = ref(new Date().toISOString().substring(0, 7)) // 格式: Y
 const reportData = ref([])
 const isLoading = ref(false)
 const baseHourlyWage = ref(200)
-const laborFee = ref(450) // 假設勞保費
-const healthFee = ref(285) // 假設健保費
+const laborFee = ref(277) // 假設勞保費
+const healthFee = ref(458) // 假設健保費
 
 
 const fetchMonthlyData = async () => {

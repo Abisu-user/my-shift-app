@@ -70,7 +70,9 @@ const handlePreview = async (event) => {
       shiftsToSave.push({
         employee_id: emp.id,
         date: aiShift.date,
-        segments: aiShift.segments // 🌟 直接存入整個 JSON 陣列
+        segments: aiShift.segments,
+        isDoublePay: false, 
+        delivery_fee: 0
       })
     })
 
