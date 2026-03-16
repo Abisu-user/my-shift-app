@@ -94,18 +94,93 @@ const calculateNetPay = (emp) => {
 }
 
 watch(selectedMonth, fetchMonthlyData)
+
+const exportToCSV = () => {
+  if (!reportData.value || reportData.value.length === 0) {
+    alert('目前沒有資料可以匯出');
+    return;
+  }
+
+  // 1. 定義 Excel 的欄位標題
+  const headers = [
+    '員工姓名', 
+    '當月總時數', 
+    '正常工時', 
+    '雙倍工時', 
+    '基本薪資', 
+    '雙倍加成', 
+    '外送加給', 
+    '勞保扣費', 
+    '健保扣費', 
+    '實領薪資'
+  ];
+  
+  // 2. 整理每位員工的資料為陣列
+  const rows = reportData.value.map(emp => {
+    // 檢查是否有扣除項目，有的話帶入目前設定的金額
+    const laborDeduction = emp.deductLabor ? Number(laborFee.value) : 0;
+    const healthDeduction = emp.deductHealth ? Number(healthFee.value) : 0;
+    const netPay = calculateNetPay(emp);
+    
+    return [
+      emp.name,
+      emp.totalHours,
+      emp.totalNormalHours,
+      emp.totalDoubleHours,
+      emp.basePay,
+      emp.doublePayBonus,
+      emp.totalDeliveryFee || 0,
+      laborDeduction,
+      healthDeduction,
+      netPay
+    ].join(','); // 將陣列合併成以逗號分隔的字串
+  });
+
+  // 3. 組合 CSV 內容。前方加上 \uFEFF 是為了讓 Excel 識別為 UTF-8，避免中文亂碼！
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  
+  // 4. 產生隱藏的下載連結並觸發點擊
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `薪資報表_${selectedMonth.value}.csv`); // 設定下載的檔名
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 </script>
 
 <template>
   <div class="p-4 md:p-6 bg-slate-50 min-h-full flex flex-col gap-4">
-    <div class="p-5 bg-white rounded-3xl shadow-sm border border-slate-200">
+   <div class="p-5 bg-white rounded-3xl shadow-sm border border-slate-200">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div>
-          <h2 class="text-2xl font-black text-slate-800 tracking-tight">薪資報表</h2>
-          <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">工時彙整與實領薪資計算</p>
+        
+        <div class="flex justify-between items-start lg:items-center gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight">薪資報表</h2>
+            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">工時彙整與實領薪資計算</p>
+          </div>
+          
+          <button 
+            @click="exportToCSV" 
+            class="flex lg:hidden items-center justify-center bg-emerald-50 text-emerald-600 p-2.5 rounded-xl font-bold hover:bg-emerald-100 transition-colors active:scale-95 shadow-sm border border-emerald-100"
+            title="匯出 Excel"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+          </button>
         </div>
 
         <div class="grid grid-cols-2 md:flex md:flex-wrap items-end gap-3 md:gap-4">
+          
+          <button 
+            @click="exportToCSV" 
+            class="hidden lg:flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-2xl font-black transition-all shadow-md active:scale-95 hover:shadow-lg hover:-translate-y-0.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            匯出 Excel
+          </button>
+
           <div class="flex flex-col gap-1">
             <label class="text-xs font-black text-slate-400 ml-1">選擇月份</label>
             <input 
