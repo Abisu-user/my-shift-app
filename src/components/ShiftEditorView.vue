@@ -9,6 +9,7 @@ const loading = ref(true)
 const quickPresets = ref([])
 const presetInput = ref({ start: '', end: '', label: '' })
 const expandedEmpId = ref(null)
+const showAddPreset = ref(false)
 
 // 日期導航
 const currentMonday = ref(new Date())
@@ -579,50 +580,91 @@ onMounted(() => {
 
         <div v-if="showBatchModal" class="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showBatchModal = false"></div>
-                <div class="bg-white w-full max-w-lg p-8 rounded-[2.5rem] shadow-2xl relative z-10 animate-scale-up">
+            <div class="bg-white w-full max-w-lg p-8 rounded-[2.5rem] shadow-2xl relative z-10 animate-scale-up max-h-[90vh] overflow-y-auto">
                 <h3 class="text-2xl font-black text-slate-800 mb-6 tracking-tight">批次套用時段</h3>
                 
                 <div class="mb-8">
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">第一步：選擇套用日期</label>
                     <div class="grid grid-cols-7 gap-2">
-                    <button 
-                        v-for="(day, idx) in ['一', '二', '三', '四', '五', '六', '日']" :key="idx"
-                        @click="batchEditForm.days.includes(idx) ? batchEditForm.days = batchEditForm.days.filter(d => d !== idx) : batchEditForm.days.push(idx)"
-                        :class="batchEditForm.days.includes(idx) ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-50 text-slate-400'"
-                        class="py-3 rounded-xl font-black text-sm transition-all"
-                    >
-                        {{ day }}
-                    </button>
+                        <button 
+                            v-for="(date, idx) in weekDates" :key="idx"
+                            @click="batchEditForm.days.includes(idx) ? batchEditForm.days = batchEditForm.days.filter(d => d !== idx) : batchEditForm.days.push(idx)"
+                            :class="batchEditForm.days.includes(idx) ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'"
+                            class="py-2 rounded-xl font-black text-sm transition-all flex flex-col items-center justify-center gap-1"
+                        >
+                            <span :class="batchEditForm.days.includes(idx) ? 'text-indigo-200' : 'text-slate-400'" class="text-[10px] font-bold">
+                                {{ new Date(date).getMonth() + 1 }}/{{ new Date(date).getDate() }}
+                            </span>
+                            <span>{{ ['日', '一', '二', '三', '四', '五', '六'][new Date(date).getDay()] }}</span>
+                        </button>
                     </div>
                 </div>
 
                 <div class="mb-8">
                     <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">第二步：設定上班時段</label>
+                    
                     <div class="flex flex-wrap gap-2 mb-6">
                         <button 
-                        v-for="p in quickPresets" :key="p.id"
-                        @click="applyBatchPreset(p)"
-                        class="bg-slate-50 border-2 border-slate-100 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 px-3 py-2 rounded-2xl text-xs font-bold transition-all flex flex-col items-center min-w-[90px]"
+                            v-for="p in quickPresets" :key="p.id"
+                            @click="applyBatchPreset(p)"
+                            class="bg-white border border-slate-200 hover:border-indigo-400 hover:text-indigo-600 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm flex flex-col items-center"
                         >
-                        <span v-if="p.label" class="text-[9px] text-indigo-500 font-black mb-1">{{ p.label }}</span>
-                        <span class="font-black">{{ p.start_time }} - {{ p.end_time }}</span>
+                            <span v-if="p.label" class="text-[9px] opacity-50 block leading-none mb-0.5">{{ p.label }}</span>
+                            <span>{{ p.start_time }} - {{ p.end_time }}</span>
                         </button>
                     </div>
 
-                    <div v-if="batchEditForm.segments.length > 0" class="space-y-2 p-4 bg-indigo-50/50 rounded-3xl border border-indigo-100">
-                        <p class="text-[10px] font-black text-indigo-400 uppercase mb-2">準備套用的時段：</p>
-                        <div v-for="(seg, idx) in batchEditForm.segments" :key="idx" class="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm">
-                        <div class="flex items-center gap-2">
-                            <input v-model="seg.start" type="time" class="text-xs font-bold border-none p-0 focus:ring-0 w-25">
-                            <span class="text-slate-300">~</span>
-                            <input v-model="seg.end" type="time" class="text-xs font-bold border-none p-0 focus:ring-0 w-25">
+                    <div class="space-y-3">
+                        <div v-for="(seg, idx) in batchEditForm.segments" :key="idx" class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <select 
+                                    v-model="seg.start"
+                                    class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                                >
+                                    <option disabled value="">開始</option>
+                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                </select>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                            </div>
+
+                            <span class="text-slate-300 font-bold">→</span>
+
+                            <div class="relative flex-1">
+                                <select 
+                                    v-model="seg.end"
+                                    class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                                >
+                                    <option disabled value="">結束</option>
+                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                </select>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                            </div>
+
+                            <button 
+                                @click="batchEditForm.segments.splice(idx, 1)"
+                                class="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                            >
+                                🗑️
+                            </button>
                         </div>
-                        <button @click="batchEditForm.segments.splice(idx, 1)" class="text-slate-300 hover:text-rose-500">✕</button>
+
+                        <div v-if="batchEditForm.segments.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                            <p class="text-xs font-bold text-slate-400 mb-3">尚未設定套用的時段</p>
+                            <button 
+                                @click="batchEditForm.segments.push({ start: '', end: '' })"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-black text-sm shadow-md hover:bg-indigo-700 transition-all active:scale-95"
+                            >
+                                <span class="text-lg leading-none">+</span> 手動新增時段
+                            </button>
                         </div>
-                    </div>
-                    
-                    <div v-else class="text-center py-6 border-2 border-dashed border-slate-100 rounded-3xl text-slate-300 text-xs font-bold">
-                        尚未選擇任何時段
+
+                        <button 
+                            v-else
+                            @click="batchEditForm.segments.push({ start: '', end: '' })"
+                            class="w-full flex justify-center items-center gap-2 px-5 py-3 bg-slate-50 text-slate-500 font-black text-sm rounded-xl hover:bg-slate-100 transition-all active:scale-95"
+                        >
+                            <span class="text-lg leading-none">+</span> 再新增一個時段
+                        </button>
                     </div>
                 </div>
 
@@ -632,183 +674,216 @@ onMounted(() => {
                 </div>
             </div>
         </div>
-      <div v-if="showEditModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showEditModal = false"></div>
-        
-      <div class="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl relative z-10 animate-scale-up max-h-[90vh] overflow-y-auto">
-        <button 
-          @click="showEditModal = false" 
-          class="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all z-20"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <h3 class="text-xl font-black text-slate-800 mb-1">編輯班表</h3>
-          <p class="text-slate-500 font-bold text-sm mb-6">{{ editingShift.employee_name }} - {{ editingShift.date }}</p>
-
-        <div class="mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">⚡ 常用時段</label>
+        <div v-if="showEditModal" class="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
+          <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showEditModal = false"></div>
+          
+          <div class="bg-white w-full h-full md:h-auto md:max-h-[90vh] md:max-w-4xl flex flex-col relative z-10 md:rounded-[2rem] shadow-2xl animate-scale-up overflow-hidden">
             
-            <div class="flex flex-wrap gap-2 mb-4">
-                <div v-for="(p, index) in quickPresets" :key="p.id" class="group relative">
-                <button 
-                    @click="applyPreset(p)"
-                    class="bg-white border border-slate-200 hover:border-indigo-400 hover:text-indigo-600 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm flex flex-col items-center"
-                >
-                    <span v-if="p.label" class="text-[9px] opacity-50 block leading-none mb-0.5">{{ p.label }}</span>
-                    <span>{{ p.start_time }} - {{ p.end_time }}</span>
-                </button>
+            <div class="flex justify-between items-center shrink-0 p-5 md:p-8 border-b border-slate-100 bg-white z-20 shadow-sm md:shadow-none">
+              <div>
+                <h3 class="text-2xl md:text-2xl font-black text-slate-800 tracking-tight">編輯班表</h3>
+                <p class="text-indigo-600 font-black text-sm md:text-sm mt-1 bg-indigo-50 inline-block px-2 py-0.5 rounded-md">
+                  {{ editingShift.employee_name }} · {{ editingShift.date }}
+                </p>
+              </div>
+              <button 
+                @click="showEditModal = false" 
+                class="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all bg-slate-50 md:bg-transparent"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 md:h-7 md:w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 md:p-8 custom-scrollbar bg-slate-50/30 md:bg-white pb-24 md:pb-8">
+              <div class="flex flex-col md:grid md:grid-cols-2 md:grid-rows-[1fr_auto] gap-6 md:gap-8 h-full">
                 
-                <button 
-                    @click.stop="removePreset(p.id, index)"
-                    class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
-                >✕</button>
-                </div>
-            </div>
+                <div class="order-1 md:row-span-2 flex flex-col">
+                  <div class="bg-white md:bg-slate-50 p-5 rounded-3xl border border-slate-100 h-full flex flex-col shadow-sm md:shadow-none">
+                    <div class="flex items-center justify-between mb-4 pl-1">
+                      <label class="block text-xs md:text-[10px] font-black text-slate-500 md:text-slate-400 uppercase tracking-widest">⚡ 快速代入常用時段</label>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2.5 mb-6 overflow-y-auto max-h-[140px] md:max-h-[100px] content-start custom-scrollbar pr-1">
+                      <div v-for="(p, index) in quickPresets" :key="p.id" class="group relative">
+                        <button 
+                          @click="applyPreset(p)"
+                          class="bg-slate-50 md:bg-white border border-slate-200 hover:border-indigo-400 hover:text-indigo-600 active:bg-indigo-50 px-4 py-2.5 md:px-3 md:py-1.5 rounded-xl text-sm md:text-xs font-bold transition-all flex flex-col items-center"
+                        >
+                          <span v-if="p.label" class="text-xs md:text-[9px] text-indigo-500 md:opacity-50 block leading-none mb-1 md:mb-0.5">{{ p.label }}</span>
+                          <span>{{ p.start_time }} - {{ p.end_time }}</span>
+                        </button>
+                        
+                        <button 
+                          @click.stop="removePreset(p.id, index)"
+                          class="absolute top-1 right-1 md:top-0 md:right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-rose-500 text-white rounded-full text-[10px] md:text-[8px] flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm"
+                        >✕</button>
+                      </div>
+                    </div>
 
-            <div class="flex flex-col gap-3 mb-6">    
-              <div class="grid grid-cols-2 gap-3">
-                  <div class="relative">
-                      <select 
-                          v-model="presetInput.start"
-                          class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                    <div class="mt-auto bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-2xl md:rounded-none border border-slate-100 md:border-none">
+                      <div class="hidden md:block w-full h-px bg-slate-200 mb-3"></div>
+                      
+                      <button 
+                          @click="showAddPreset = !showAddPreset"
+                          class="w-full flex justify-between items-center text-xs md:text-[10px] font-black text-slate-500 md:text-slate-400 uppercase tracking-widest pl-1 py-1 hover:text-indigo-600 transition-colors"
                       >
-                          <option disabled value="">開始時間</option>
-                          <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                      </select>
-                      <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
-                  </div>
+                          <span class="flex items-center gap-1">
+                              <span class="text-sm leading-none">{{ showAddPreset ? '−' : '➕' }}</span> 
+                              新增常用時段
+                          </span>
+                          <span class="transition-transform duration-300" :class="{ 'rotate-180': showAddPreset }">▼</span>
+                      </button>
 
-                  <div class="relative">
-                      <select 
-                          v-model="presetInput.end"
-                          class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                      <div v-show="showAddPreset" class="flex flex-col gap-3 mt-4 animate-fade-in">    
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative">
+                                <select 
+                                    v-model="presetInput.start"
+                                    class="w-full bg-white border-none rounded-xl px-4 py-3.5 md:py-3 font-bold text-base md:text-sm text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer shadow-sm"
+                                >
+                                    <option disabled value="">開始</option>
+                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                </select>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
+                            </div>
+
+                            <div class="relative">
+                                <select 
+                                    v-model="presetInput.end"
+                                    class="w-full bg-white border-none rounded-xl px-4 py-3.5 md:py-3 font-bold text-base md:text-sm text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer shadow-sm"
+                                >
+                                    <option disabled value="">結束</option>
+                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                </select>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
+                            </div>
+                        </div>
+
+                        <input 
+                            type="text" 
+                            v-model="presetInput.label"
+                            placeholder="標籤 (選填，如: 早班)"
+                            class="w-full bg-white border-none rounded-xl px-4 py-3.5 md:py-3 font-bold text-base md:text-sm text-slate-600 focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                        >
+
+                        <button 
+                            @click="addNewPreset"
+                            :disabled="!presetInput.start || !presetInput.end"
+                            class="w-full flex justify-center items-center gap-2 px-5 py-3.5 bg-emerald-500 text-white font-black text-base md:text-sm rounded-xl shadow-md hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 mt-1"
+                        >
+                            儲存為常用時段
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="order-2 flex flex-col">
+                  <div class="space-y-4 mb-2 md:mb-6 flex-1">
+                    <label class="block text-xs md:text-[10px] font-black text-slate-500 md:text-slate-400 uppercase tracking-widest pl-1">📅 當日排班時段</label>
+                    
+                    <div v-if="editingShift.segments.length === 0" class="text-center py-10 bg-white md:bg-slate-50/50 rounded-3xl border border-dashed border-slate-300 shadow-sm md:shadow-none">
+                        <p class="text-base font-bold text-slate-400 mb-4">這天目前沒有排班紀錄</p>
+                        <button 
+                            @click="addSegment"
+                            class="inline-flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-base shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+                        >
+                            <span class="text-xl leading-none">+</span> 手動新增時段
+                        </button>
+                    </div>
+
+                    <div v-else class="flex flex-col gap-3">
+                      <div v-for="(seg, idx) in editingShift.segments" :key="idx" class="flex items-center gap-2 bg-white md:bg-transparent p-2 md:p-0 rounded-2xl shadow-sm md:shadow-none border border-slate-100 md:border-none">
+                        <div class="relative flex-1">
+                            <select 
+                                v-model="seg.start"
+                                class="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 md:py-3 font-black text-base md:text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                            >
+                                <option disabled value="">開始</option>
+                                <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                            </select>
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
+                        </div>
+
+                        <span class="text-slate-300 font-bold px-1">→</span>
+
+                        <div class="relative flex-1">
+                            <select 
+                                v-model="seg.end"
+                                class="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 md:py-3 font-black text-base md:text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                            >
+                                <option disabled value="">結束</option>
+                                <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                            </select>
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
+                        </div>
+
+                        <button 
+                            @click="removeSegment(idx)"
+                            class="p-3.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors bg-slate-50 md:bg-transparent"
+                        >
+                            🗑️
+                        </button>
+                      </div>
+                      
+                      <button 
+                          @click="addSegment"
+                          class="w-full flex justify-center items-center gap-2 px-5 py-3.5 bg-white md:bg-slate-50 text-indigo-600 font-black text-base md:text-sm rounded-2xl md:rounded-xl border border-indigo-100 hover:bg-indigo-50 transition-all active:scale-95 mt-2 shadow-sm md:shadow-none"
                       >
-                          <option disabled value="">結束時間</option>
-                          <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                      </select>
-                      <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                          <span class="text-xl leading-none">+</span> 再新增時段
+                      </button>
+                    </div>
                   </div>
-              </div>
-
-              <input 
-                  type="text" 
-                  v-model="presetInput.label"
-                  placeholder="標籤 (選填，如: 早班)"
-                  class="w-full bg-white border-none rounded-xl px-4 py-3 font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500"
-              >
-
-              <button 
-                  @click="addPreset"
-                  :disabled="!presetInput.start || !presetInput.end"
-                  class="w-full flex justify-center items-center gap-2 px-5 py-3 bg-emerald-500 text-white font-black text-sm rounded-xl shadow-sm hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-              >
-                  <span class="text-lg leading-none">+</span> 儲存常用時段
-              </button>
-          </div>
-        </div>
-
-          <div class="space-y-3 mb-6">
-            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">當日詳細時段</label>
-           <div v-for="(seg, idx) in editingShift.segments" :key="idx" class="mb-4">
-    
-            <div class="flex items-center gap-2 mb-2">
-                <div class="relative flex-1">
-                    <select 
-                        v-model="seg.start"
-                        class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
-                    >
-                        <option disabled value="">開始</option>
-                        <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                    </select>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
                 </div>
 
-                <span class="text-slate-300 font-bold">→</span>
+                <div class="order-3 flex flex-col justify-end mt-4 md:mt-0">
+                  <div class="bg-white md:bg-slate-50 p-5 rounded-3xl border border-slate-100 shadow-sm md:shadow-none space-y-4">
+                    <div>
+                      <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-base md:text-sm font-bold text-slate-700 flex items-center gap-2">
+                          <span class="text-xl">🛵</span> 外送津貼
+                        </h4>
+                        <span class="text-xs font-bold text-slate-400">當日累計</span>
+                      </div>
+                      <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-lg">$</span>
+                        <input 
+                          type="number" 
+                          v-model.number="editingShift.delivery_fee"
+                          placeholder="請輸入金額"
+                          class="w-full pl-9 pr-4 py-3.5 bg-slate-50 md:bg-white border-none rounded-xl font-black text-base text-slate-700 focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                        >
+                      </div>
+                    </div>
 
-                <div class="relative flex-1">
-                    <select 
-                        v-model="seg.end"
-                        class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
-                    >
-                        <option disabled value="">結束</option>
-                        <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                    </select>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+                    <div class="w-full h-px bg-slate-100 md:bg-slate-200"></div>
+
+                    <label class="flex items-start md:items-center gap-3 p-3 bg-slate-50 md:bg-white rounded-2xl cursor-pointer border border-transparent hover:border-rose-100 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        v-model="editingShift.isDoublePay" 
+                        class="w-6 h-6 md:w-5 md:h-5 mt-0.5 md:mt-0 rounded border-slate-300 text-rose-500 focus:ring-rose-500"
+                      >
+                      <div class="flex flex-col">
+                        <span class="font-bold text-slate-700 text-base md:text-sm">此班表為雙倍薪資</span>
+                        <span class="text-xs md:text-[10px] text-slate-400 mt-1 md:mt-0.5 leading-tight">系統自動同步，可手動調整</span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
-                <button 
-                    @click="removeSegment(idx)"
-                    class="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
-                >
-                    🗑️
-                </button>
               </div>
-            </div>
-          </div>
-
-          <div v-if="editingShift.segments.length === 0" class="text-center py-10 bg-white/50 rounded-xl border border-dashed border-indigo-200">
-              <p class="text-sm font-bold text-indigo-300 mb-4">這天目前沒有排班紀錄</p>
-              
-              <button 
-                  @click="addSegment"
-                  class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
-              >
-                  <span class="text-xl">+</span> 手動新增時段
-              </button>
-          </div>
-
-          <div v-else class="flex flex-col gap-3">
-              <div v-for="(seg, idx) in editingShift.segments" :key="idx" class="flex items-center gap-2">
-                  </div>
-              
-              <button 
-                  @click="addSegment"
-                  class="w-full flex justify-center items-center gap-2 px-5 py-3 bg-indigo-600 text-white font-black text-sm rounded-xl shadow-sm hover:bg-indigo-700 transition-all active:scale-95 mb-4"
-              >
-                  <span class="text-lg leading-none">+</span> 手動新增時段
-              </button>
-          </div>
-
-          <div class="mt-6 pt-6 border-t border-slate-100">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="text-sm font-bold text-slate-700 flex items-center gap-2">
-                <span class="text-lg">🛵</span> 外送津貼
-              </h4>
-              <span class="text-xs font-bold text-slate-400">當日累計金額</span>
             </div>
             
-            <div class="relative">
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black">$</span>
-              <input 
-                type="number" 
-                v-model.number="editingShift.delivery_fee"
-                placeholder="請輸入金額"
-                class="w-full pl-8 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl font-black text-slate-700 focus:border-indigo-500 focus:bg-white transition-all outline-none"
-              >
+            <div class="shrink-0 p-4 md:p-6 bg-white border-t border-slate-100 flex gap-3 z-20">
+              <button @click="handleDelete" class="w-1/3 md:w-auto px-4 py-4 md:py-4 rounded-2xl border-2 border-rose-100 text-rose-500 font-bold hover:bg-rose-50 transition text-base md:text-sm active:scale-95">清空</button>
+              <button @click="handleSave" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg md:text-base py-4 rounded-2xl shadow-lg shadow-indigo-200 transition active:scale-95">儲存班表設定</button>
             </div>
-          </div>
 
-          <label class="flex items-center gap-3 p-4 mt-4 bg-rose-50 rounded-2xl cursor-pointer border border-rose-100 hover:bg-rose-100/50 transition-colors">
-            <input 
-              type="checkbox" 
-              v-model="editingShift.isDoublePay" 
-              class="w-5 h-5 rounded border-rose-300 text-rose-500 focus:ring-rose-500"
-            >
-            <div class="flex flex-col">
-              <span class="font-bold text-rose-700 text-sm">此班表為雙倍薪資</span>
-              <span class="text-xs text-rose-500 mt-0.5">系統已自動同步日曆設定，您也可手動調整</span>
-            </div>
-          </label>
-
-          <div class="flex gap-3">
-            <button @click="handleDelete" class="px-4 py-3 rounded-xl border border-rose-100 text-rose-500 font-bold hover:bg-rose-50 transition text-sm">全部清空</button>
-            <button @click="handleSave" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg transition">儲存設定</button>
           </div>
         </div>
-      </div>
 
         <div v-if="confirmConfig.show" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity"></div>
@@ -853,4 +928,17 @@ onMounted(() => {
 .animate-fade-in { animation: fadeIn 0.3s ease-out; }
 @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* slate-300 */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* slate-400 */
+}
 </style>
