@@ -862,7 +862,7 @@ const cancelReview = () => {
         </div>
         <h3 class="text-white font-black text-2xl mb-2 tracking-widest animate-pulse">AI 視覺解析中</h3>
         <p class="text-indigo-200 text-sm font-bold text-center">
-          正在讀取手寫班表與休假記號…<br>這可能需要 10 ~ 20 秒，請稍候
+          正在讀取手寫班表與休假記號…<br>這可能需要 1 ~ 2 分鐘，請稍候
         </p>
       </div>
     </Transition>
