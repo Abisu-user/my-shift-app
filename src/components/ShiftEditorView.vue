@@ -15,11 +15,23 @@ const showAddPreset = ref(false)
 const currentMonday = ref(new Date())
 
 const datePicker = ref(null)
-const timeOptions = []
-for (let i = 0; i < 24; i++) {
+
+// 產生開始時間選項 (09:00 ~ 18:00)
+const startTimeOptions = []
+for (let i = 9; i <= 18; i++) {
   const h = i.toString().padStart(2, '0')
-  timeOptions.push(`${h}:00`)
-  timeOptions.push(`${h}:30`)
+  startTimeOptions.push(`${h}:00`)
+  if (i < 18) { // 確保最後一個時間是 18:00 而不是 18:30
+    startTimeOptions.push(`${h}:30`)
+  }
+}
+
+// 產生結束時間選項 (14:00 ~ 20:30)
+const endTimeOptions = []
+for (let i = 14; i <= 20; i++) {
+  const h = i.toString().padStart(2, '0')
+  endTimeOptions.push(`${h}:00`)
+  endTimeOptions.push(`${h}:30`) // 到 20 的時候會剛好 push 20:00 跟 20:30
 }
 
 // 編輯彈窗狀態
@@ -622,7 +634,7 @@ onMounted(() => {
                                     class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
                                 >
                                     <option disabled value="">開始</option>
-                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                    <option v-for="t in startTimeOptions" :key="t" :value="t">{{ t }}</option>
                                 </select>
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
                             </div>
@@ -635,7 +647,7 @@ onMounted(() => {
                                     class="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-black text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
                                 >
                                     <option disabled value="">結束</option>
-                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                    <option v-for="t in endTimeOptions" :key="t" :value="t">{{ t }}</option>
                                 </select>
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
                             </div>
@@ -744,7 +756,7 @@ onMounted(() => {
                                     class="w-full bg-white border-none rounded-xl px-4 py-3.5 md:py-3 font-bold text-base md:text-sm text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer shadow-sm"
                                 >
                                     <option disabled value="">開始</option>
-                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                    <option v-for="t in startTimeOptions" :key="t" :value="t">{{ t }}</option>
                                 </select>
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
                             </div>
@@ -755,7 +767,7 @@ onMounted(() => {
                                     class="w-full bg-white border-none rounded-xl px-4 py-3.5 md:py-3 font-bold text-base md:text-sm text-slate-600 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer shadow-sm"
                                 >
                                     <option disabled value="">結束</option>
-                                    <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                    <option v-for="t in endTimeOptions" :key="t" :value="t">{{ t }}</option>
                                 </select>
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
                             </div>
@@ -802,7 +814,7 @@ onMounted(() => {
                                 class="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 md:py-3 font-black text-base md:text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
                             >
                                 <option disabled value="">開始</option>
-                                <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                <option v-for="t in startTimeOptions" :key="t" :value="t">{{ t }}</option>
                             </select>
                             <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
                         </div>
@@ -815,7 +827,7 @@ onMounted(() => {
                                 class="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 md:py-3 font-black text-base md:text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
                             >
                                 <option disabled value="">結束</option>
-                                <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
+                                <option v-for="t in endTimeOptions" :key="t" :value="t">{{ t }}</option>
                             </select>
                             <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-sm">▼</div>
                         </div>
