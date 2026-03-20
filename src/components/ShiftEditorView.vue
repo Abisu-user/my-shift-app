@@ -28,10 +28,12 @@ for (let i = 9; i <= 18; i++) {
 
 // 產生結束時間選項 (14:00 ~ 20:30)
 const endTimeOptions = []
-for (let i = 14; i <= 20; i++) {
+for (let i = 12; i <= 20; i++) {
   const h = i.toString().padStart(2, '0')
-  endTimeOptions.push(`${h}:00`)
-  endTimeOptions.push(`${h}:30`) // 到 20 的時候會剛好 push 20:00 跟 20:30
+  if (i !== 12) { // 確保 12 點只有 12:30，不要 12:00
+    endTimeOptions.push(`${h}:00`)
+  }
+  endTimeOptions.push(`${h}:30`)
 }
 
 // 編輯彈窗狀態
