@@ -388,25 +388,42 @@ const confirmSave = async () => {
   try {
     const shiftsToSave = []
     for (const row of parsedSchedule.value) {
-      if (!row.segments?.length) continue
+      // 🛡️ 防呆 1：如果沒有段落，或是沒有日期，直接跳過這筆不存
+      if (!row.segments?.length || !row.date) {
+        console.warn(`⚠️ 資料不完整 (缺少班次或日期)，跳過：${row.name}`)
+        continue
+      }
+      
       const emp = employees.value.find(e =>
         e.name === row.name || e.name.includes(row.name) || row.name.includes(e.name)
       )
       if (!emp) { console.warn(`⚠️ 找不到員工：${row.name}`); continue }
 
+      // 🛡️ 防呆 2：過濾並清理 segments 資料
+      const validSegments = row.segments
+        .filter(s => s.startTime && s.endTime) // 過濾掉沒有開始或結束時間的殘缺班次
+        .map(s => ({
+          // 確保寫入的一定是字串，並把前後不小心多出的空白鍵去掉
+          start: String(s.startTime).trim(),
+          end: String(s.endTime).trim(),
+        }))
+
+      // 如果過濾完之後發現沒有合法班次了，這筆也不要存
+      if (validSegments.length === 0) {
+        console.warn(`⚠️ 班次時間皆為空值，跳過：${row.name}`)
+        continue
+      }
+
       shiftsToSave.push({
         employee_id:  emp.id,
         date:         row.date,
-        segments:     row.segments.map(s => ({
-          startTime: s.startTime,
-          endTime:   s.endTime,
-        })),
+        segments:     validSegments, // 👈 改用過濾過的安全資料
         isDoublePay:  false,
         delivery_fee: 0
       })
     }
 
-    if (shiftsToSave.length === 0) { alert('⚠️ 沒有找到需要寫入的班表。'); return }
+    if (shiftsToSave.length === 0) { alert('⚠️ 沒有找到完整且需要寫入的班表。'); return }
 
     await shiftService.batchSaveShifts(shiftsToSave)
     alert(`✅ 成功寫入 ${shiftsToSave.length} 筆班次！`)
