@@ -233,8 +233,8 @@ function buildMainPrompt({ targetRange, validNames, currentYear, currentMonth })
             {
               "date": "${currentYear}-${String(currentMonth).padStart(2, '0')}-01",
               "segments": [
-                { "start": "09:30", "end": "14:00" },
-                { "start": "17:00", "end": "20:30" }
+                { "startTime": "09:30", "endTime": "14:00" },
+                { "startTime": "17:00", "endTime": "20:30" }
               ],
               "isOff": false
             },
@@ -292,7 +292,7 @@ function buildSingleRowPrompt({ employeeName, targetRange, currentYear, currentM
           "shifts": [
             {
               "date": "${currentYear}-${String(currentMonth).padStart(2, '0')}-01",
-              "segments": [{ "start": "09:30", "end": "18:30" }],
+              "segments": [{ "startTime": "09:30", "endTime": "18:30" }],
               "isOff": false
             }
           ]
